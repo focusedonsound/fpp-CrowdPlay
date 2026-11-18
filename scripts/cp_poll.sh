@@ -16,7 +16,7 @@ HERE="${PLUGIN_DIR}/scripts"
 source "${HERE}/cp_lib.sh"
 cp_ensure_dirs
 
-RELAY_URL="$(cp_cfg '.relayUrl')"
+RELAY_URL="$(cp_relay)"
 SHOW_ID="$(cp_cfg '.showId')"
 SHOW_KEY="$(cp_cfg '.showKey')"
 HOLD_SEC="$(cp_cfg '.poll.holdSec' '25')"

@@ -4,7 +4,10 @@ $configFile = "/home/fpp/media/plugindata/fpp-CrowdPlay/crowdplay.json";
 $cfg = file_exists($configFile) ? json_decode(@file_get_contents($configFile), true) : [];
 if (!is_array($cfg)) $cfg = [];
 
+// The relay is hosted for everyone; a fresh install seeds relayUrl blank, so
+// default to the built-in hosted relay for the embed snippet and status checks.
 $relayUrl   = $cfg['relayUrl']   ?? '';
+if ($relayUrl === '') $relayUrl = 'https://crowdplay-relay.nscilingo.workers.dev';
 $showId     = $cfg['showId']     ?? '';
 $licenseKey = $cfg['licenseKey'] ?? '';
 $fppApi     = $cfg['fppApi']     ?? 'http://127.0.0.1/api/command';
@@ -17,9 +20,10 @@ $configured = ($relayUrl !== '' && $showId !== '');
 $ui = $cfg['ui'] ?? [];
 $onboardingSeen = !empty($ui['onboardingSeen']);
 $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
-// Off-plugin page with license-key details (kept out of the plugin UI per FPP's
-// plugin guidelines - no in-plugin pricing/promotion). Overridable from config.
-$upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay-signup/';
+// Optional, operator-set link to off-plugin license-key info. Blank by default:
+// FPP's plugin guidelines forbid pricing/promotion or payment links in a plugin,
+// so nothing ships pointing at a purchase page. Set it in config if you want a link.
+$upgradeUrl = $cfg['upgradeUrl'] ?? '';
 ?>
 <style>
   #cpWrap{
@@ -184,7 +188,7 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay
       <input type="text" id="showId" name="showId" value="<?= $h($showId) ?>" placeholder="my-show">
       <label class="cp-lab">License key <span class="cp-muted">(optional)</span></label>
       <input type="text" id="licenseKey" name="licenseKey" value="<?= $h($licenseKey) ?>" placeholder="paste your license key">
-      <p class="cp-sub" style="margin:6px 0 0; font-size:12.5px">CrowdPlay works without a key. A license key is optional and raises the per-hour and control limits &mdash; <a href="<?= $h($upgradeUrl) ?>" target="_blank" rel="noopener">details</a>.</p>
+      <p class="cp-sub" style="margin:6px 0 0; font-size:12.5px">CrowdPlay works without a key. A license key is optional and raises the per-hour and control limits.<?php if ($upgradeUrl !== ''): ?> <a href="<?= $h($upgradeUrl) ?>" target="_blank" rel="noopener">Details</a>.<?php endif; ?></p>
       <!-- Relay URL is hosted for everyone; kept as a hidden field (feeds the embed
            snippet builder and the save path) rather than a self-host setting. -->
       <input type="hidden" id="relayUrl" name="relayUrl" value="<?= $h($relayUrl) ?>">

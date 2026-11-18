@@ -41,14 +41,14 @@ chmod 755 "$CFG_DIR" 2>/dev/null || true
 
 # Seed a default config on first install (never overwrite an existing one).
 #
-# CrowdPlay uses one hosted relay for everyone, so the relay URL is pre-filled
-# and the user never has to deploy anything. Each install also gets:
+# CrowdPlay uses one hosted relay for everyone; the plugin defaults to it at
+# runtime (see scripts/cp_lib.sh and www/index.php), so the seeded config leaves
+# relayUrl blank and the user never has to deploy anything. Each install also gets:
 #   - a unique Show ID   (public; appears in the embed URL) so two shows on the
 #     shared relay never collide, and
 #   - a private Show Key (secret) that proves this player owns the Show ID, so
 #     nobody who sees your public Show ID can hijack, drain, or overwrite it.
 CFG_FILE="${CFG_DIR}/crowdplay.json"
-HOSTED_RELAY="https://crowdplay-relay.nscilingo.workers.dev"
 if [[ ! -f "$CFG_FILE" ]]; then
   # Friendly, collision-resistant Show ID: sanitized hostname + random suffix.
   GEN_HOST="$(hostname 2>/dev/null | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9-' | sed 's/^-*//;s/-*$//' | cut -c1-24)"
@@ -59,7 +59,7 @@ if [[ ! -f "$CFG_FILE" ]]; then
 
   cat > "$CFG_FILE" <<JSON
 {
-  "relayUrl": "${HOSTED_RELAY}",
+  "relayUrl": "",
   "showId": "${SHOW_ID}",
   "showKey": "${SHOW_KEY}",
   "licenseKey": "",

@@ -48,22 +48,16 @@ Licensing reuses the pattern from `fpp-EncoreRadio-license-server` (Cloudflare W
 CrowdPlay is fully usable for free. Without a license key, a show can expose up to
 **3 controls** and take **30 presses/hour** (shared across all controls). An
 **optional** license key, validated at the relay, raises those limits and enables
-the themed widget, badge removal, and per-show analytics. Per FPP's plugin
-guidelines the plugin UI carries no pricing or promotion — pricing and sign-up live
-off the plugin, on the project website (`upgradeUrl`).
-
-**How keys are issued (architecture).** Keys live in the `crowdplay-licenses` D1
-and are validated by the relay. Fulfilment reuses `fpp-EncoreRadio-license-server`:
-its PayPal IPN handler mints a key into that D1 and emails it over SMTP, routed to
-CrowdPlay by the PayPal button's item name / id. `scripts/mint-key.sh` (relay repo)
-issues a manual or comp key directly.
+the themed widget, badge removal, and per-show analytics. Keys are validated at the
+relay against the shared license server; everything about obtaining one lives off
+the plugin (the plugin carries no pricing, promotion, or payment links, per FPP's
+plugin guidelines).
 
 ## Config (`plugindata/fpp-CrowdPlay/crowdplay.json`)
 
 ```jsonc
 {
-  "relayUrl": "https://<your-show>.<you>.workers.dev",
-  "upgradeUrl": "https://christmasinboontontwp.com/crowdplay-signup/",  // "Get a key" link
+  "relayUrl": "",                                                   // blank = built-in hosted relay
   "showId": "",
   "licenseKey": "",                                                 // blank = Free tier
   "fppApi": "http://127.0.0.1/api/command",
@@ -97,16 +91,14 @@ issues a manual or comp key directly.
   `Effect Start` / `FSEQ Effect Start` support `bg` (concurrent), `loop`, and
   `ifNotRunning`; `/api/effects` is the running-effects list; content lists for the
   settings UI come from `/api/models?simple=true`, `/api/sequence`, `/api/overlays/effects`.
-- **Functional end-to-end (Release Candidate 1).** The relay is deployed
-  (`crowdplay-relay.nscilingo.workers.dev`) with Durable Object queue, tiered rate
+- **Released (v1.0.1).** The relay is deployed
+  (`crowdplay-relay.nscilingo.workers.dev`) with a Durable Object queue, tiered rate
   limits, Turnstile bot protection, license validation, per-command embeds, and the
   themed widget. The plugin registers on start, long-polls, and runs allowlisted
   commands locally; register/poll/complete are authenticated with a per-show key.
-  Premium tiers (Free / Personal $5·yr / Commercial) are enforced, and paid keys are
-  sold + auto-delivered via PayPal → the shared license server → email. Verified live
-  on fpp-dev (visitor press → overlay effect) and via the deployed relay.
-- **Before 1.0:** a clean-box install smoke test, a live $5 PayPal test subscription,
-  and written GitHub release notes.
+  License tiers are enforced at the relay and keys are validated against the shared
+  license server. Verified live on fpp-dev (visitor press → overlay effect), via the
+  deployed relay, and with a clean-box install on real hardware.
 
 ## License
 

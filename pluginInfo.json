@@ -12,11 +12,11 @@
   "minMemoryMB": 256,
   "minCpuCores": 1,
   "privacy": {
-    "summary": "Visitors trigger a set of FPP Commands you choose, through a hosted relay. The plugin polls the relay outbound and runs allowlisted commands locally - the show player is never reachable from the internet. Optional location gating uses the visitor's browser location, checked at the relay and not retained.",
+    "summary": "Visitors trigger FPP Commands you choose, through a hosted relay. The plugin polls the relay outbound and runs allowlisted commands locally; your show player is never reachable from the internet.",
     "sends": [
       {
-        "to": "the CrowdPlay relay you configure (a Cloudflare Worker URL)",
-        "what": "your show ID and license key (when validating), outbound poll requests, and command-completion reports. No visitor personal data is sent by the plugin.",
+        "to": "crowdplay-relay.nscilingo.workers.dev (the hosted CrowdPlay relay)",
+        "what": "Show ID and license key (when validating), outbound poll requests, and command-completion reports.",
         "why": "to receive queued visitor commands and validate a license",
         "alwaysOn": true
       }
@@ -38,12 +38,12 @@
       }
     ],
     "sensors": [],
-    "remoteAccess": "internet",
+    "remoteAccess": "internet-authenticated",
     "systemChanges": [
-      { "kind": "service", "what": "Runs a lightweight outbound poll loop (started/stopped by the CrowdPlay - Start/Stop commands) that long-polls the relay and runs your allowlisted FPP commands via FPP's own local command API." }
+      { "kind": "service", "what": "Outbound poll loop (started/stopped by CrowdPlay - Start/Stop) that long-polls the relay and runs your allowlisted commands via FPP's command API." }
     ],
     "closedCode": false,
-    "other": "The plugin is open source. The relay it talks to (queue, rate limiting, bot protection, license validation) is a separate hosted service and is not part of this plugin. The plugin enforces its own command allowlist locally: the relay can only ask it to run commands you have explicitly configured, never arbitrary ones. Location gating is evaluated at the relay from the visitor's browser-reported coordinates; those coordinates are used only for the distance check and are not stored by the plugin. Uninstalling leaves plugindata/fpp-CrowdPlay/ in place so reinstalling keeps your settings."
+    "other": "The plugin is open source. The relay it talks to (queue, rate limiting, bot protection, license validation) is a separate hosted service and is not part of this plugin. The plugin enforces its own command allowlist locally: the relay can only ask it to run commands you have explicitly configured, never arbitrary ones. Location gating is evaluated at the relay from the visitor's browser-reported coordinates; those coordinates are used only for the distance check and are not stored by the plugin. No visitor personal data is sent by the plugin. Uninstalling leaves plugindata/fpp-CrowdPlay/ in place so reinstalling keeps your settings."
   },
   "versions": [
     {

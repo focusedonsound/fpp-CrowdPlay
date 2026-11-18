@@ -28,7 +28,7 @@ function cpClean($s) { return str_replace(["\r", "\n"], "", (string)$s); }
 function cpDefaultConfig() {
   return [
     "relayUrl" => "https://crowdplay-relay.nscilingo.workers.dev",
-    "upgradeUrl" => "https://christmasinboontontwp.com/crowdplay-signup/",
+    "upgradeUrl" => "",
     "showId" => "",
     "showKey" => "",
     "licenseKey" => "",

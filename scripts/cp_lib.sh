@@ -29,7 +29,10 @@ cp_cfg() {
 cp_local_fpp_api() { cp_cfg '.fppApi' 'http://127.0.0.1/api/command'; }
 
 # Relay coordinates.
-cp_relay()   { local u; u="$(cp_cfg '.relayUrl')"; printf '%s' "${u%/}"; }
+# The relay is hosted for everyone; when the config leaves relayUrl blank (the
+# default a fresh install seeds), fall back to the built-in hosted relay.
+CP_DEFAULT_RELAY="https://crowdplay-relay.nscilingo.workers.dev"
+cp_relay()   { local u; u="$(cp_cfg '.relayUrl')"; [[ -n "$u" ]] || u="$CP_DEFAULT_RELAY"; printf '%s' "${u%/}"; }
 cp_show()    { cp_cfg '.showId'; }
 cp_license() { cp_cfg '.licenseKey'; }
 # Private ownership secret - proves this player owns the (public) Show ID.
