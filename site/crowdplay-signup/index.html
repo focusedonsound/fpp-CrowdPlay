@@ -1,116 +1,213 @@
-<!doctype html>
+<!DOCTYPE html>
 <!--
-  CrowdPlay signup / purchase page.
-  Upload this file to:  christmasinboontontwp.com/crowdplay-signup/index.html
-  (same place as the EncoreRadio page at /encore-radio-signup/index.html).
+  CrowdPlay license / purchase page.
+  Lives at:  christmasinboontontwp.com/crowdplay-signup/index.html
+  Mirrors the EncoreRadio license page (/encore-radio-license/).
 
-  EDIT TWO THINGS before you upload, then it's live:
-    1) PAYPAL LINK  — find  href="REPLACE_WITH_PAYPAL_LINK"  below and set it to
-       your PayPal.me link for $5 (e.g. https://paypal.me/yourhandle/5USD) or a
-       PayPal "Buy Now" hosted-button URL.
-    2) CONTACT EMAIL — find  REPLACE_WITH_EMAIL  (two places) and set your
-       support/contact address.
-  After a sale, mint the key with  scripts/mint-key.sh <buyer-email>  in the
-  fpp-CrowdPlay-relay repo and email it to them.
+  BEFORE THIS BUTTON TAKES MONEY, Nick must:
+    1) In PayPal (Business > Tools > PayPal Buttons > Subscribe, yearly cycle,
+       $5 USD), create a CrowdPlay subscribe button and copy its hosted_button_id.
+       Paste it below in place of REPLACE_WITH_CROWDPLAY_HOSTED_BUTTON_ID.
+    2) Turn on Account > Notifications > Instant Payment Notifications (IPN),
+       pointed at the license server's CrowdPlay IPN handler (see note by the
+       form). The IPN handler mints a key into the crowdplay-licenses D1 and
+       emails it to the buyer - the same way EncoreRadio's does.
 -->
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CrowdPlay &mdash; Plans</title>
-<meta name="description" content="Let your light-show audience trigger effects from their phones. Start free, go Personal for $5.">
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrowdPlay License - Christmas in Boonton Township</title>
+<meta name="description" content="Unlock the CrowdPlay Personal tier - let your light-show audience trigger effects from their phones.">
 <style>
-  :root{color-scheme:light dark;--ink:#1f2430;--muted:#6b7280;--line:#e6e6ef;--card:#fff;--bg:#f6f6fb;--brand:#6d5bff;--brand2:#9b4dff;--good:#1e9e63;--field:#fff}
-  @media (prefers-color-scheme:dark){:root{--ink:#e9e9f2;--muted:#9aa0ad;--line:#2a2f3a;--card:#1b1f27;--bg:#12151c;--field:#222734}}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
-  .wrap{max-width:900px;margin:0 auto;padding:0 16px 56px}
-  .hero{background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;border-radius:0 0 24px 24px;padding:38px 20px 34px;text-align:center}
-  .hero .mark{width:54px;height:54px;margin:0 auto 10px;display:block}
-  .hero h1{margin:0;font-size:30px;letter-spacing:-.01em}
-  .hero p{margin:8px 0 0;font-size:16px;opacity:.95}
-  .lead{text-align:center;color:var(--muted);max-width:620px;margin:22px auto 0;font-size:15px}
-  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:26px}
-  @media (max-width:680px){.plans{grid-template-columns:1fr}}
-  .plan{position:relative;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 18px}
-  .plan.pop{border-color:var(--brand);box-shadow:0 14px 34px -18px rgba(109,91,255,.65)}
-  .tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:linear-gradient(120deg,var(--brand),var(--brand2));padding:3px 11px;border-radius:999px;white-space:nowrap}
-  .pname{font-weight:700;font-size:16px}
-  .price{font-size:30px;font-weight:800;color:var(--brand);margin:6px 0 2px}
-  .price span{font-size:13px;font-weight:600;color:var(--muted)}
-  ul.feat{list-style:none;margin:12px 0 18px;padding:0;font-size:13.5px;flex:1}
-  ul.feat li{position:relative;padding-left:20px;margin:5px 0}
-  ul.feat li::before{content:"\2713";position:absolute;left:0;color:var(--good);font-weight:700}
-  a.cta{display:block;text-align:center;text-decoration:none;font-size:14.5px;font-weight:650;padding:11px 14px;border-radius:11px;border:1px solid transparent;margin-top:auto}
-  a.cta.primary{background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 10px 22px -10px rgba(109,91,255,.75)}
-  a.cta.ghost{background:var(--field);border-color:var(--line);color:var(--ink)}
-  .how{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin-top:26px}
-  .how h2{margin:0 0 10px;font-size:18px}
-  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}
-  @media (max-width:680px){.steps{grid-template-columns:1fr 1fr}}
-  .step{font-size:13.5px}
-  .step b{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;font-size:14px;margin-bottom:6px}
-  .foot{text-align:center;color:var(--muted);font-size:13px;margin-top:28px}
-  .foot a{color:var(--brand)}
-</style></head><body>
-  <div class="hero">
-    <svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <rect x="15" y="6" width="18" height="33" rx="4" fill="#fff" opacity=".95"/>
-      <circle cx="24" cy="32" r="3.4" fill="#ff9f1c"/>
-      <path d="M24 32l6 6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
-    </svg>
-    <h1>CrowdPlay</h1>
-    <p>Put the show in their hands.</p>
-  </div>
-  <div class="wrap">
-    <p class="lead">Let the people watching your light show trigger effects from their phones &mdash; no app, no exposed player. CrowdPlay is hosted for you; start free and upgrade when your crowd grows. One key unlocks one show.</p>
+  :root {
+    --cp-brand: #6d5bff;
+    --cp-brand2: #9b4dff;
+    --cp-gold: #c99a2e;
+    --cp-ink: #212529;
+    --cp-muted: #6c757d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #0e1420;
+    color: var(--cp-ink);
+    line-height: 1.55;
+  }
+  .cp-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 20px 64px;
+  }
+  .cp-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 36px 32px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+  }
+  .cp-badge {
+    display: inline-block;
+    background: linear-gradient(120deg, var(--cp-brand), var(--cp-brand2));
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: 1.7rem;
+    color: var(--cp-ink);
+  }
+  .cp-sub {
+    color: var(--cp-muted);
+    margin: 0 0 22px;
+    font-size: 0.95rem;
+  }
+  p { margin: 0 0 16px; }
+  .cp-perks {
+    margin: 18px 0 4px;
+    padding: 0;
+    list-style: none;
+  }
+  .cp-perks li {
+    position: relative;
+    padding-left: 24px;
+    margin: 7px 0;
+    font-size: 0.95rem;
+  }
+  .cp-perks li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: #146c43;
+    font-weight: 700;
+  }
+  .cp-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 24px 0 20px;
+    padding: 16px 18px;
+    background: #f3f1ff;
+    border: 1px solid #ddd6ff;
+    border-radius: 8px;
+  }
+  .cp-price {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--cp-brand);
+  }
+  .cp-price-note {
+    color: var(--cp-muted);
+    font-size: 0.9rem;
+  }
+  .cp-buy-btn {
+    display: inline-block;
+    background: linear-gradient(120deg, var(--cp-brand), var(--cp-brand2));
+    color: #fff !important;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 14px 28px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+  }
+  .cp-buy-btn:hover { filter: brightness(1.06); }
+  .cp-steps {
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cp-steps li {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+  }
+  .cp-steps .num {
+    flex: 0 0 26px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(120deg, var(--cp-brand), var(--cp-brand2));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cp-foot {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    font-size: 0.85rem;
+    color: var(--cp-muted);
+  }
+  .cp-foot a { color: var(--cp-brand); }
+</style>
+</head>
+<body>
+  <div class="cp-wrap">
+    <div class="cp-card">
+      <span class="cp-badge">CrowdPlay &mdash; License</span>
+      <h1>Put the show in their hands</h1>
+      <p class="cp-sub">Christmas in Boonton Township</p>
 
-    <div class="plans">
-      <div class="plan">
-        <div class="pname">Free</div>
-        <div class="price">$0</div>
-        <ul class="feat">
-          <li>Up to 3 controls</li>
-          <li>30 presses/hour (shared)</li>
-          <li>Default button look</li>
-          <li>&ldquo;Powered by CrowdPlay&rdquo; badge</li>
-        </ul>
-        <a class="cta ghost" href="https://github.com/focusedonsound/fpp-CrowdPlay" target="_blank" rel="noopener">Start free</a>
+      <p>
+        CrowdPlay lets the people watching your light show trigger effects
+        right from their phones &mdash; no app, and your FPP player is never
+        exposed. It's free to start. A <strong>Personal</strong> license lifts
+        the free limits and unlocks the premium touches:
+      </p>
+
+      <ul class="cp-perks">
+        <li>300 presses per hour (up from 30)</li>
+        <li>Unlimited controls (free is capped at 3)</li>
+        <li>Your own button colors &amp; headline</li>
+        <li>No &ldquo;Powered by CrowdPlay&rdquo; badge</li>
+        <li>Per-show analytics</li>
+      </ul>
+
+      <div class="cp-price-row">
+        <span class="cp-price">$5</span>
+        <span class="cp-price-note">per year &middot; auto-renews &middot; one show</span>
       </div>
-      <div class="plan pop">
-        <div class="tag">Recommended</div>
-        <div class="pname">Personal</div>
-        <div class="price">$5 <span>one-time</span></div>
-        <ul class="feat">
-          <li>300 presses/hour</li>
-          <li>Unlimited controls</li>
-          <li>Your colors &amp; headline</li>
-          <li>No CrowdPlay badge</li>
-          <li>Per-show analytics</li>
-        </ul>
-        <!-- EDIT: set your PayPal $5 link below -->
-        <a class="cta primary" href="REPLACE_WITH_PAYPAL_LINK" target="_blank" rel="noopener">Buy with PayPal &mdash; $5</a>
-      </div>
-      <div class="plan">
-        <div class="pname">Commercial</div>
-        <div class="price">Contact</div>
-        <ul class="feat">
-          <li>Uncapped presses</li>
-          <li>Everything in Personal</li>
-          <li>Ticketed &amp; for-profit shows</li>
-        </ul>
-        <a class="cta ghost" href="mailto:REPLACE_WITH_EMAIL?subject=CrowdPlay%20Commercial" target="_blank" rel="noopener">Contact us</a>
+
+      <!--
+        PayPal setup (for Nick): create a "Subscribe" button in PayPal
+        (Business account > Tools > PayPal Buttons > Subscribe, Yearly billing
+        cycle, $5 USD), then copy the "hosted_button_id" value PayPal gives you
+        and paste it in place of REPLACE_WITH_CROWDPLAY_HOSTED_BUTTON_ID below.
+        Also turn ON Account Settings > Notifications > Instant Payment
+        Notifications and point it at the CrowdPlay IPN handler, which mints the
+        key into the crowdplay-licenses D1 and emails it (same as EncoreRadio):
+        https://encoreradio-license.nscilingo.workers.dev/api/paypal-ipn
+      -->
+      <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+        <input type="hidden" name="cmd" value="_s-xclick">
+        <input type="hidden" name="hosted_button_id" value="REPLACE_WITH_CROWDPLAY_HOSTED_BUTTON_ID">
+        <input type="hidden" name="currency_code" value="USD">
+        <button type="submit" class="cp-buy-btn">Subscribe with PayPal</button>
+      </form>
+
+      <ol class="cp-steps">
+        <li><span class="num">1</span><span>Subscribe securely with PayPal using the button above &mdash; it renews automatically each year.</span></li>
+        <li><span class="num">2</span><span>Your license key arrives by email within a minute or two.</span></li>
+        <li><span class="num">3</span><span>Paste it into the <strong>License key</strong> field of the CrowdPlay plugin page on your FPP box, Save, and re-run CrowdPlay Start.</span></li>
+      </ol>
+
+      <div class="cp-foot">
+        Questions, or trouble receiving your key? Reach out at
+        <a href="mailto:license.request@christmasinboontontwp.com">license.request@christmasinboontontwp.com</a>.
       </div>
     </div>
-
-    <div class="how">
-      <h2>How it works</h2>
-      <div class="steps">
-        <div class="step"><b>1</b>Buy the Personal key above (one-time, $5).</div>
-        <div class="step"><b>2</b>We email your license key.</div>
-        <div class="step"><b>3</b>Paste it into the plugin's <em>License key</em> field and Save.</div>
-        <div class="step"><b>4</b>Re-run CrowdPlay Start &mdash; premium unlocked.</div>
-      </div>
-    </div>
-
-    <p class="foot">Questions? <a href="mailto:REPLACE_WITH_EMAIL?subject=CrowdPlay%20license">Get in touch</a> &middot; <a href="https://github.com/focusedonsound/fpp-CrowdPlay" target="_blank" rel="noopener">CrowdPlay on GitHub</a></p>
   </div>
-</body></html>
+</body>
+</html>
