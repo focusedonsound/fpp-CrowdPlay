@@ -51,22 +51,24 @@ same license server as `fpp-EncoreRadio`) sets the tier. One key unlocks one sho
 | Plan | Price | Presses/hour | Controls | Styling & analytics | Badge |
 |------|-------|--------------|----------|---------------------|-------|
 | **Free** | $0 | 30 (shared across all controls) | up to 3 | default look | "Powered by CrowdPlay" |
-| **Personal** | $5 one-time | 300 | unlimited | custom colors + headline, per-show analytics | none |
+| **Personal** | $5/year (auto-renews) | 300 | unlimited | custom colors + headline, per-show analytics | none |
 | **Commercial** | contact | uncapped | unlimited | same as Personal | none |
 
 Personal and Commercial unlock the same premium features; the difference is the
 hourly press cap (and Commercial covers ticketed / for-profit shows). The hourly
 cap is per show, counted across all of its controls.
 
-The plugin's **Get a key** button and `upgradeUrl` point at the signup page at
-`christmasinboontontwp.com/crowdplay-signup/` (sibling of the EncoreRadio page).
-The static source lives in this repo at [`site/crowdplay-signup/index.html`](site/crowdplay-signup/index.html) —
-upload it to that host, edit the two placeholders (PayPal link + contact email),
-and it's live. It mirrors the EncoreRadio flow: pick a tier, pay (PayPal, one-time
-$5 for Personal), receive a key by email, paste it into the **License key** field.
-Keys are minted into the `crowdplay-licenses` D1 with `scripts/mint-key.sh` in the
-relay repo (the manual half of that flow today; a PayPal webhook can call the same
-insert to automate it).
+The plugin's **Get a key** button and `upgradeUrl` point at the live signup page at
+`christmasinboontontwp.com/crowdplay-signup/` (sibling of the EncoreRadio page;
+static source in this repo at [`site/crowdplay-signup/index.html`](site/crowdplay-signup/index.html)).
+It mirrors the EncoreRadio flow: a PayPal **Subscribe** button ($5/year, auto-renews),
+and the key is emailed to the buyer, who pastes it into the **License key** field.
+
+Fulfilment is automatic: the shared license server (`fpp-EncoreRadio-license-server`)
+receives the PayPal IPN, mints a `personal`-tier key into the `crowdplay-licenses`
+D1, and emails it over SMTP — routed to CrowdPlay by the button's item name / id.
+For a manual or comp key, `scripts/mint-key.sh` in the relay repo inserts one
+directly.
 
 A live, zero-upload copy of the same page is also served by the relay at
 `https://crowdplay-relay.nscilingo.workers.dev/buy` (its PayPal target is the
@@ -111,9 +113,16 @@ A live, zero-upload copy of the same page is also served by the relay at
   `Effect Start` / `FSEQ Effect Start` support `bg` (concurrent), `loop`, and
   `ifNotRunning`; `/api/effects` is the running-effects list; content lists for the
   settings UI come from `/api/models?simple=true`, `/api/sequence`, `/api/overlays/effects`.
-- **Phase 1 (this scaffold):** plugin skeleton — manifest, menu, commands, poll loop,
-  local executor + allowlist, settings page. **Not yet functional end-to-end** (needs the
-  relay API contract finalized — marked `TODO(relay)` in the code).
+- **Functional end-to-end (Release Candidate 1).** The relay is deployed
+  (`crowdplay-relay.nscilingo.workers.dev`) with Durable Object queue, tiered rate
+  limits, Turnstile bot protection, license validation, per-command embeds, and the
+  themed widget. The plugin registers on start, long-polls, and runs allowlisted
+  commands locally; register/poll/complete are authenticated with a per-show key.
+  Premium tiers (Free / Personal $5·yr / Commercial) are enforced, and paid keys are
+  sold + auto-delivered via PayPal → the shared license server → email. Verified live
+  on fpp-dev (visitor press → overlay effect) and via the deployed relay.
+- **Before 1.0:** a clean-box install smoke test, a live $5 PayPal test subscription,
+  and written GitHub release notes.
 
 ## License
 

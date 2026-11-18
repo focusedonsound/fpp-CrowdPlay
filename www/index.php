@@ -230,7 +230,7 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay
         <div class="cp-plan cp-plan-pop">
           <div class="cp-plan-tag">Recommended</div>
           <div class="cp-plan-name">Personal</div>
-          <div class="cp-plan-price">$5 <span>one-time</span></div>
+          <div class="cp-plan-price">$5 <span>/year</span></div>
           <ul class="cp-plan-feat">
             <li>300 presses/hour</li>
             <li>Unlimited controls</li>
