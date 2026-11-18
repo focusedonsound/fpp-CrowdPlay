@@ -4,14 +4,12 @@
   Lives at:  christmasinboontontwp.com/crowdplay-signup/index.html
   Mirrors the EncoreRadio license page (/encore-radio-license/).
 
-  BEFORE THIS BUTTON TAKES MONEY, Nick must:
-    1) In PayPal (Business > Tools > PayPal Buttons > Subscribe, yearly cycle,
-       $5 USD), create a CrowdPlay subscribe button and copy its hosted_button_id.
-       Paste it below in place of REPLACE_WITH_CROWDPLAY_HOSTED_BUTTON_ID.
-    2) Turn on Account > Notifications > Instant Payment Notifications (IPN),
-       pointed at the license server's CrowdPlay IPN handler (see note by the
-       form). The IPN handler mints a key into the crowdplay-licenses D1 and
-       emails it to the buyer - the same way EncoreRadio's does.
+  Live PayPal Subscribe button: hosted_button_id 2QC74PAH2PW7L ($5/yr USD,
+  item name contains "CrowdPlay" so the shared license server's IPN routes the
+  payment to the crowdplay-licenses store). On payment, the IPN handler mints a
+  personal-tier key and emails it to the buyer's PayPal email (payer_email) -
+  the same Zoho SMTP path EncoreRadio uses. IPN endpoint:
+  https://encoreradio-license.nscilingo.workers.dev/api/paypal-ipn
 -->
 <html lang="en">
 <head>
@@ -192,7 +190,7 @@
       -->
       <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
         <input type="hidden" name="cmd" value="_s-xclick">
-        <input type="hidden" name="hosted_button_id" value="REPLACE_WITH_CROWDPLAY_HOSTED_BUTTON_ID">
+        <input type="hidden" name="hosted_button_id" value="2QC74PAH2PW7L">
         <input type="hidden" name="currency_code" value="USD">
         <button type="submit" class="cp-buy-btn">Subscribe with PayPal</button>
       </form>
