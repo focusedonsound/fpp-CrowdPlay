@@ -35,6 +35,7 @@ function cpDefaultConfig() {
     "commands" => [],
     "location" => ["enabled" => false, "lat" => null, "lon" => null,
                    "radiusM" => 300, "toleranceM" => 50, "onDenied" => "strict"],
+    "ui" => ["onboardingSeen" => false, "onboardingTourEnabled" => true],
   ];
 }
 

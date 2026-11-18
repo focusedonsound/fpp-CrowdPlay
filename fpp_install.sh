@@ -50,7 +50,8 @@ if [[ ! -f "$CFG_FILE" ]]; then
   "fppApi": "http://127.0.0.1/api/command",
   "poll": { "mode": "longpoll", "holdSec": 25 },
   "commands": [],
-  "location": { "enabled": false, "lat": null, "lon": null, "radiusM": 300, "toleranceM": 50, "onDenied": "strict" }
+  "location": { "enabled": false, "lat": null, "lon": null, "radiusM": 300, "toleranceM": 50, "onDenied": "strict" },
+  "ui": { "onboardingSeen": false, "onboardingTourEnabled": true }
 }
 JSON
   chmod 600 "$CFG_FILE" 2>/dev/null || true

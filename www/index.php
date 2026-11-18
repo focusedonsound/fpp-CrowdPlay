@@ -13,6 +13,9 @@ $loc        = $cfg['location'] ?? [];
 $commands   = $cfg['commands']  ?? [];
 $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES);
 $configured = ($relayUrl !== '' && $showId !== '');
+$ui = $cfg['ui'] ?? [];
+$onboardingSeen = !empty($ui['onboardingSeen']);
+$tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
 ?>
 <style>
   #cpWrap{
@@ -114,6 +117,22 @@ $configured = ($relayUrl !== '' && $showId !== '');
   #cpWrap .cp-muted{color:var(--cp-muted)}
   #cpWrap a{color:var(--cp-brand)}
   @media (max-width:560px){ #cpWrap .cp-grid2{grid-template-columns:1fr} #cpWrap #cpMsg{margin-left:0; width:100%} }
+
+  /* onboarding tour */
+  #cp-tour-highlight{position:fixed; z-index:10050; pointer-events:none; border:2.5px solid var(--cp-brand); border-radius:14px; box-shadow:0 0 0 4000px rgba(10,8,30,.55); transition:top .2s,left .2s,width .2s,height .2s}
+  #cp-tour-popup{position:fixed; z-index:10051; max-width:350px; width:calc(100% - 24px); background:var(--cp-card); color:var(--cp-ink); border:1px solid var(--cp-line); border-radius:14px; box-shadow:0 .7rem 1.6rem rgba(0,0,0,.45); padding:16px 18px; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  #cp-tour-popup .t-of{font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--cp-brand); font-weight:700; margin-bottom:5px}
+  #cp-tour-popup .t-title{font-weight:750; font-size:16px; margin-bottom:6px; color:var(--cp-ink)}
+  #cp-tour-popup .t-text{font-size:13.5px; color:var(--cp-muted); line-height:1.5; margin-bottom:14px}
+  #cp-tour-popup .t-row{display:flex; gap:8px; align-items:center}
+  #cp-tour-popup .t-row .spacer{margin-left:auto}
+  #cp-tour-popup button{font-size:13px; font-weight:650; padding:8px 14px; border-radius:9px; cursor:pointer; border:1px solid var(--cp-line); background:var(--cp-field); color:var(--cp-ink)}
+  #cp-tour-popup button.t-next{background:linear-gradient(120deg,var(--cp-brand),var(--cp-brand2)); color:#fff; border-color:transparent}
+  #cp-tour-popup button.t-skip{border:0; background:transparent; color:var(--cp-muted); padding-left:0}
+  #cp-tour-popup button:disabled{opacity:.4; cursor:default}
+  #cp-tour-arrow{position:fixed; z-index:10051; width:0; height:0; border-left:9px solid transparent; border-right:9px solid transparent}
+  .cp-arrow-below{border-bottom:9px solid var(--cp-card)}
+  .cp-arrow-above{border-top:9px solid var(--cp-card)}
 </style>
 
 <div id="cpWrap">
@@ -142,9 +161,13 @@ $configured = ($relayUrl !== '' && $showId !== '');
     </div>
   </header>
 
+  <div style="text-align:right; margin:-10px 2px 14px">
+    <a href="#" id="cpReplayTour" style="font-size:12.5px; font-weight:600; text-decoration:none">&#9654; Replay walkthrough</a>
+  </div>
+
   <form id="cpForm" onsubmit="return false;">
     <!-- Relay -->
-    <section class="cp-card">
+    <section class="cp-card" id="cpCardRelay">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.5a7 7 0 0 1 14 0"/><path d="M8 15a4 4 0 0 1 8 0"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg>Relay</h2>
       <p class="cp-sub">Where this player polls for visitor requests. The player never opens a port &mdash; it reaches the relay outbound.</p>
       <label class="cp-lab">Relay URL</label>
@@ -167,7 +190,7 @@ $configured = ($relayUrl !== '' && $showId !== '');
     </section>
 
     <!-- Location -->
-    <section class="cp-card">
+    <section class="cp-card" id="cpCardLoc">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.3"/></svg>Location gating</h2>
       <p class="cp-sub">Optionally require a visitor to be near the show. Checked at the relay from the visitor's device; coordinates aren't stored.</p>
       <label class="cp-switch"><input type="checkbox" id="locEnabled" name="locEnabled" <?= !empty($loc['enabled']) ? 'checked' : '' ?>> Require visitors to be near the show</label>
@@ -192,7 +215,7 @@ $configured = ($relayUrl !== '' && $showId !== '');
     </section>
 
     <!-- Commands -->
-    <section class="cp-card">
+    <section class="cp-card" id="cpCardCmd">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 9h6M7 13h10"/></svg>Exposed commands</h2>
       <p class="cp-sub">Only commands you add here can be triggered. The raw FPP command and its arguments stay on this player &mdash; the relay only learns the label, lane, cooldown and duration.</p>
       <div class="cp-tablewrap">
@@ -209,7 +232,7 @@ $configured = ($relayUrl !== '' && $showId !== '');
     </section>
 
     <!-- Embed -->
-    <section class="cp-card">
+    <section class="cp-card" id="cpCardEmbed">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>Embed</h2>
       <p class="cp-sub">Paste into your own site or your Remote Falcon page &mdash; it keeps working inside an iframe.</p>
       <textarea class="cp-embed" id="cpEmbed" rows="3" readonly onclick="this.select()"></textarea>
@@ -332,4 +355,87 @@ cpLoadFppCommands();
 cpUpdateEmbed();
 document.getElementById('relayUrl').addEventListener('input', ()=>{ cpUpdateEmbed(); cpRefreshStatus(); });
 document.getElementById('showId').addEventListener('input', ()=>{ cpUpdateEmbed(); cpRefreshStatus(); });
+
+// --- First-run guided walkthrough (spotlight + popup over this page) ---
+const CP_TOUR_STEPS = [
+  { selector:'.cp-hero', title:'Welcome to CrowdPlay',
+    text:"Let your show's visitors trigger effects from a button on your own site — without exposing this player to the internet. Here's the 60-second setup." },
+  { selector:'#cpCardRelay', title:'1. Connect the relay',
+    text:'Point this player at your CrowdPlay relay URL and give your show an ID. Paste a license key to lift the free-tier limit — leave it blank to start free.' },
+  { selector:'#cpCardLoc', title:'2. Location (optional)',
+    text:'Want only people AT the show to play? Turn this on, drop your location, and set a radius. Leave it off to let anyone with the link join.' },
+  { selector:'#cpCardCmd', title:'3. Choose what they can trigger',
+    text:'Add each FPP command you want to expose — only these can run; the raw command never leaves this player. Set a cooldown, a lane so repeats for one prop queue up, and whether it’s public.' },
+  { selector:'#cpCardEmbed', title:'4. Put it on your site',
+    text:'Copy this iframe into your website or Remote Falcon page. It keeps working even where custom scripts are stripped.' },
+  { selector:'.cp-actions', title:'5. Go live',
+    text:'Save, then press Start now — or schedule the “CrowdPlay - Start” command before your show. That’s it: the show is in their hands.' }
+];
+let cpTourIndex = -1, cpTourReposition = null;
+function cpTourBuild(){
+  if(document.getElementById('cp-tour-popup')) return;
+  // Append inside #cpWrap so the fixed-position tour elements inherit the
+  // scoped, theme-aware --cp-* color tokens (which aren't defined on <body>).
+  const root=document.getElementById('cpWrap')||document.body;
+  const hl=document.createElement('div'); hl.id='cp-tour-highlight'; root.appendChild(hl);
+  const arrow=document.createElement('div'); arrow.id='cp-tour-arrow'; root.appendChild(arrow);
+  const p=document.createElement('div'); p.id='cp-tour-popup';
+  p.innerHTML='<div class="t-of" id="cp-tour-of"></div><div class="t-title" id="cp-tour-title"></div>'+
+    '<div class="t-text" id="cp-tour-text"></div><div class="t-row">'+
+    '<button class="t-skip" id="cp-tour-skip">Skip</button><span class="spacer"></span>'+
+    '<button id="cp-tour-back">Back</button><button class="t-next" id="cp-tour-next">Next</button></div>';
+  root.appendChild(p);
+  document.getElementById('cp-tour-back').addEventListener('click', ()=>cpTourGo(cpTourIndex-1));
+  document.getElementById('cp-tour-next').addEventListener('click', ()=>cpTourGo(cpTourIndex+1));
+  document.getElementById('cp-tour-skip').addEventListener('click', cpTourEnd);
+}
+function cpTourStart(){ cpTourBuild(); cpTourGo(0); }
+function cpTourGo(i){
+  if(i<0) return;
+  if(i>=CP_TOUR_STEPS.length){ cpTourEnd(); return; }
+  cpTourIndex=i; const step=CP_TOUR_STEPS[i];
+  const target=document.querySelector(step.selector);
+  if(!target){ cpTourGo(i+1); return; }
+  document.getElementById('cp-tour-of').textContent='Step '+(i+1)+' of '+CP_TOUR_STEPS.length;
+  document.getElementById('cp-tour-title').textContent=step.title;
+  document.getElementById('cp-tour-text').textContent=step.text;
+  document.getElementById('cp-tour-back').disabled=(i===0);
+  document.getElementById('cp-tour-next').textContent=(i===CP_TOUR_STEPS.length-1)?'Finish':'Next';
+  target.scrollIntoView({behavior:'smooth', block:'center'});
+  clearTimeout(cpTourReposition); cpTourReposition=setTimeout(cpTourPosition, 280);
+}
+function cpTourPosition(){
+  const step=CP_TOUR_STEPS[cpTourIndex]; const target=step && document.querySelector(step.selector);
+  if(!target) return;
+  const r=target.getBoundingClientRect(), pad=6;
+  const hl=document.getElementById('cp-tour-highlight');
+  hl.style.top=(r.top-pad)+'px'; hl.style.left=(r.left-pad)+'px';
+  hl.style.width=(r.width+pad*2)+'px'; hl.style.height=(r.height+pad*2)+'px';
+  const popup=document.getElementById('cp-tour-popup'), arrow=document.getElementById('cp-tour-arrow');
+  const popupW=popup.offsetWidth||320;
+  const spaceBelow=window.innerHeight-r.bottom;
+  const below=spaceBelow>=200 || spaceBelow>=r.top;
+  const left=Math.max(8, Math.min(r.left, window.innerWidth-popupW-8));
+  popup.style.left=left+'px';
+  if(below){ popup.style.top=(r.bottom+pad+12)+'px'; popup.style.bottom=''; }
+  else{ popup.style.bottom=(window.innerHeight-r.top+pad+12)+'px'; popup.style.top=''; }
+  const aLeft=Math.max(left+14, Math.min(r.left+r.width/2-9, left+popupW-26));
+  arrow.style.left=aLeft+'px';
+  arrow.className=below?'cp-arrow-above':'cp-arrow-below';
+  if(below){ arrow.style.top=(r.bottom+pad)+'px'; arrow.style.bottom=''; }
+  else{ arrow.style.bottom=(window.innerHeight-r.top+pad)+'px'; arrow.style.top=''; }
+}
+function cpTourEnd(){
+  cpTourIndex=-1;
+  ['cp-tour-highlight','cp-tour-arrow','cp-tour-popup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
+  fetch(cpUrl('mark_onboarding_seen.php'), {method:'POST', cache:'no-store'}).catch(()=>{});
+}
+window.addEventListener('resize', ()=>{ if(cpTourIndex>=0) cpTourPosition(); });
+window.addEventListener('scroll', ()=>{ if(cpTourIndex>=0) cpTourPosition(); }, true);
+const cpReplay=document.getElementById('cpReplayTour');
+if(cpReplay) cpReplay.addEventListener('click', e=>{ e.preventDefault(); cpTourStart(); });
+
+if(!<?= $onboardingSeen ? 'true' : 'false' ?> && <?= $tourEnabled ? 'true' : 'false' ?>){
+  setTimeout(cpTourStart, 450);
+}
 </script>
