@@ -79,7 +79,7 @@ $configured = ($relayUrl !== '' && $showId !== '');
   #cpWrap table.cp-tbl{width:100%; border-collapse:collapse; font-size:13px; min-width:760px}
   #cpWrap table.cp-tbl th{
     text-align:left; font-size:11px; letter-spacing:.04em; text-transform:uppercase;
-    color:var(--cp-muted); font-weight:700; padding:10px 8px; background:var(--cp-bg); border-bottom:1px solid var(--cp-line);
+    color:var(--cp-muted); font-weight:700; padding:10px 8px; background:var(--cp-bg); border-bottom:1px solid var(--cp-line); white-space:nowrap;
   }
   #cpWrap table.cp-tbl td{padding:7px 8px; border-bottom:1px solid var(--cp-line); vertical-align:middle}
   #cpWrap table.cp-tbl tr:last-child td{border-bottom:0}
@@ -199,7 +199,7 @@ $configured = ($relayUrl !== '' && $showId !== '');
         <table class="cp-tbl">
           <thead><tr>
             <th>Label</th><th>ID</th><th>FPP command</th><th>Args (JSON)</th>
-            <th>Mode</th><th>Lane</th><th>Cooldown s</th><th>Duration s</th><th>Public</th><th></th>
+            <th>Mode</th><th>Lane</th><th>Cooldown&nbsp;(s)</th><th>Duration&nbsp;(s)</th><th>Public</th><th></th>
           </tr></thead>
           <tbody id="cpCmdBody"></tbody>
         </table>
