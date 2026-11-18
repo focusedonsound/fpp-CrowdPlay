@@ -1,0 +1,12 @@
+# Force LF for everything that runs on the FPP box (CRLF breaks bash/php).
+* text=auto eol=lf
+*.sh text eol=lf
+*.php text eol=lf
+*.inc text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.ico binary
