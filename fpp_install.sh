@@ -37,7 +37,7 @@ log "Installing fpp-CrowdPlay..."
 ensure_dir "$CFG_DIR"
 ensure_dir "$STATE_DIR"
 ensure_dir "$LOG_DIR"
-chmod 700 "$CFG_DIR" 2>/dev/null || true
+chmod 755 "$CFG_DIR" 2>/dev/null || true
 
 # Seed a default config on first install (never overwrite an existing one).
 CFG_FILE="${CFG_DIR}/crowdplay.json"
@@ -64,6 +64,14 @@ else
   SELF="$PLUGIN_SELF_DIR"
 fi
 chmod +x "$SELF"/commands/*.sh "$SELF"/scripts/*.sh 2>/dev/null || true
+
+# The plugin manager runs this installer as root, but FPP's web UI (PHP) and
+# fppd both run as the 'fpp' user - so hand ownership of the data dirs (and the
+# seeded config) to fpp, or the settings page can't save and the daemon can't
+# read its config.
+if id fpp >/dev/null 2>&1; then
+  chown -R fpp:fpp "$CFG_DIR" "$STATE_DIR" 2>/dev/null || true
+fi
 
 log "fpp-CrowdPlay installed. Open the CrowdPlay page to configure the relay and your commands."
 # NOTE: new plugin commands (CrowdPlay - Start/Stop) need an FPPD restart to

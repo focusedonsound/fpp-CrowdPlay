@@ -105,7 +105,9 @@ $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES);
 
 <script>
 const CP_PLUGIN = 'fpp-CrowdPlay';
-const cpUrl = (p) => 'plugin.php?plugin=' + CP_PLUGIN + '&page=www/' + p;
+// nopage=1 so plugin.php runs the PHP endpoint raw instead of wrapping it in
+// the FPP page chrome (which would swallow the JSON response + its headers).
+const cpUrl = (p) => 'plugin.php?plugin=' + CP_PLUGIN + '&nopage=1&page=www/' + p;
 const EXISTING = <?= json_encode($commands ?: [], JSON_UNESCAPED_SLASHES) ?>;
 const msg = (t, err) => { const m = document.getElementById('cpMsg'); m.textContent = t; m.style.color = err ? '#c0392b' : '#2e7d32'; };
 
