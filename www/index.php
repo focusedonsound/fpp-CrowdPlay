@@ -185,10 +185,11 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay
       <label class="cp-lab">License key <span class="cp-muted">(optional)</span></label>
       <input type="text" id="licenseKey" name="licenseKey" value="<?= $h($licenseKey) ?>" placeholder="paste your license key">
       <p class="cp-sub" style="margin:6px 0 0; font-size:12.5px">CrowdPlay works without a key. A license key is optional and raises the per-hour and control limits &mdash; <a href="<?= $h($upgradeUrl) ?>" target="_blank" rel="noopener">details</a>.</p>
+      <!-- Relay URL is hosted for everyone; kept as a hidden field (feeds the embed
+           snippet builder and the save path) rather than a self-host setting. -->
+      <input type="hidden" id="relayUrl" name="relayUrl" value="<?= $h($relayUrl) ?>">
       <details class="cp-adv">
         <summary>Advanced</summary>
-        <label class="cp-lab">Relay URL <span class="cp-muted">&mdash; hosted for you; only change this if you self-host</span></label>
-        <input type="text" id="relayUrl" name="relayUrl" value="<?= $h($relayUrl) ?>" placeholder="https://your-relay.example.workers.dev">
         <div class="cp-grid2">
           <div><label class="cp-lab">Local FPP command API</label>
             <input type="text" id="fppApi" name="fppApi" value="<?= $h($fppApi) ?>"></div>
@@ -451,7 +452,7 @@ async function cpLoadStats(){
 cpLoadFppCommands();
 cpUpdateEmbed();
 cpLoadStats();
-document.getElementById('relayUrl').addEventListener('input', ()=>{ cpUpdateEmbed(); cpRefreshStatus(); });
+// Relay URL is fixed (hosted for everyone) - only the show name affects the embed.
 document.getElementById('showId').addEventListener('input', ()=>{ cpUpdateEmbed(); cpRefreshStatus(); });
 // Keep the per-control embeds in sync as labels/ids/public toggles change.
 document.getElementById('cpCmdBody').addEventListener('input', cpUpdateEmbed);
