@@ -168,18 +168,16 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
   <form id="cpForm" onsubmit="return false;">
     <!-- Relay -->
     <section class="cp-card" id="cpCardRelay">
-      <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.5a7 7 0 0 1 14 0"/><path d="M8 15a4 4 0 0 1 8 0"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg>Relay</h2>
-      <p class="cp-sub">Where this player polls for visitor requests. The player never opens a port &mdash; it reaches the relay outbound.</p>
-      <label class="cp-lab">Relay URL</label>
-      <input type="text" id="relayUrl" name="relayUrl" value="<?= $h($relayUrl) ?>" placeholder="https://your-show.workers.dev">
-      <div class="cp-grid2">
-        <div><label class="cp-lab">Show ID</label>
-          <input type="text" id="showId" name="showId" value="<?= $h($showId) ?>" placeholder="my-show"></div>
-        <div><label class="cp-lab">License key <span class="cp-muted">(blank = free tier)</span></label>
-          <input type="text" id="licenseKey" name="licenseKey" value="<?= $h($licenseKey) ?>" placeholder="unlock premium"></div>
-      </div>
+      <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.5a7 7 0 0 1 14 0"/><path d="M8 15a4 4 0 0 1 8 0"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg>Your show</h2>
+      <p class="cp-sub">CrowdPlay is hosted for you &mdash; there's nothing to deploy and no port to open. This player is already connected; just give your show a name. Paste a license key to unlock premium.</p>
+      <label class="cp-lab">Show name <span class="cp-muted">&mdash; appears in your embed link; must be unique</span></label>
+      <input type="text" id="showId" name="showId" value="<?= $h($showId) ?>" placeholder="my-show">
+      <label class="cp-lab">License key <span class="cp-muted">(blank = free tier)</span></label>
+      <input type="text" id="licenseKey" name="licenseKey" value="<?= $h($licenseKey) ?>" placeholder="unlock premium">
       <details class="cp-adv">
         <summary>Advanced</summary>
+        <label class="cp-lab">Relay URL <span class="cp-muted">&mdash; hosted for you; only change this if you self-host</span></label>
+        <input type="text" id="relayUrl" name="relayUrl" value="<?= $h($relayUrl) ?>" placeholder="https://crowdplay-relay.nscilingo.workers.dev">
         <div class="cp-grid2">
           <div><label class="cp-lab">Local FPP command API</label>
             <input type="text" id="fppApi" name="fppApi" value="<?= $h($fppApi) ?>"></div>
@@ -360,8 +358,8 @@ document.getElementById('showId').addEventListener('input', ()=>{ cpUpdateEmbed(
 const CP_TOUR_STEPS = [
   { selector:'.cp-hero', title:'Welcome to CrowdPlay',
     text:"Let your show's visitors trigger effects from a button on your own site — without exposing this player to the internet. Here's the 60-second setup." },
-  { selector:'#cpCardRelay', title:'1. Connect the relay',
-    text:'Point this player at your CrowdPlay relay URL and give your show an ID. Paste a license key to lift the free-tier limit — leave it blank to start free.' },
+  { selector:'#cpCardRelay', title:'1. Name your show',
+    text:"Good news — you're already connected. CrowdPlay is hosted for you, so there's nothing to deploy. Just give your show a name (it becomes part of your embed link). Paste a license key to lift the free-tier limit, or leave it blank to start free." },
   { selector:'#cpCardLoc', title:'2. Location (optional)',
     text:'Want only people AT the show to play? Turn this on, drop your location, and set a radius. Leave it off to let anyone with the link join.' },
   { selector:'#cpCardCmd', title:'3. Choose what they can trigger',

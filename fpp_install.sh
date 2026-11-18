@@ -40,12 +40,28 @@ ensure_dir "$LOG_DIR"
 chmod 755 "$CFG_DIR" 2>/dev/null || true
 
 # Seed a default config on first install (never overwrite an existing one).
+#
+# CrowdPlay uses one hosted relay for everyone, so the relay URL is pre-filled
+# and the user never has to deploy anything. Each install also gets:
+#   - a unique Show ID   (public; appears in the embed URL) so two shows on the
+#     shared relay never collide, and
+#   - a private Show Key (secret) that proves this player owns the Show ID, so
+#     nobody who sees your public Show ID can hijack, drain, or overwrite it.
 CFG_FILE="${CFG_DIR}/crowdplay.json"
+HOSTED_RELAY="https://crowdplay-relay.nscilingo.workers.dev"
 if [[ ! -f "$CFG_FILE" ]]; then
-  cat > "$CFG_FILE" <<'JSON'
+  # Friendly, collision-resistant Show ID: sanitized hostname + random suffix.
+  GEN_HOST="$(hostname 2>/dev/null | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9-' | sed 's/^-*//;s/-*$//' | cut -c1-24)"
+  [[ -n "$GEN_HOST" ]] || GEN_HOST="show"
+  RAND6="$(openssl rand -hex 3 2>/dev/null || head -c3 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+  SHOW_KEY="$(openssl rand -hex 16 2>/dev/null || head -c16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+  SHOW_ID="${GEN_HOST}-${RAND6}"
+
+  cat > "$CFG_FILE" <<JSON
 {
-  "relayUrl": "",
-  "showId": "",
+  "relayUrl": "${HOSTED_RELAY}",
+  "showId": "${SHOW_ID}",
+  "showKey": "${SHOW_KEY}",
   "licenseKey": "",
   "fppApi": "http://127.0.0.1/api/command",
   "poll": { "mode": "longpoll", "holdSec": 25 },
@@ -55,7 +71,7 @@ if [[ ! -f "$CFG_FILE" ]]; then
 }
 JSON
   chmod 600 "$CFG_FILE" 2>/dev/null || true
-  log "Seeded default config at $CFG_FILE"
+  log "Seeded default config at $CFG_FILE (showId=${SHOW_ID})"
 fi
 
 # Make scripts executable (fppd runs command scripts via execve).

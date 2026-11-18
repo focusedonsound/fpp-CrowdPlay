@@ -32,31 +32,38 @@ cp_local_fpp_api() { cp_cfg '.fppApi' 'http://127.0.0.1/api/command'; }
 cp_relay()   { local u; u="$(cp_cfg '.relayUrl')"; printf '%s' "${u%/}"; }
 cp_show()    { cp_cfg '.showId'; }
 cp_license() { cp_cfg '.licenseKey'; }
+# Private ownership secret - proves this player owns the (public) Show ID.
+# Sent as X-CrowdPlay-Key on register/poll/complete; never in the embed URL.
+cp_showkey() { cp_cfg '.showKey'; }
 
 # Register the exposed-command catalog + location config with the relay.
 # Sends ONLY what the relay needs to queue/gate/render - never fppCommand/args
 # (those stay local; the relay never sees the raw FPP command).
 cp_relay_register() {
-    local relay show key payload resp
-    relay="$(cp_relay)"; show="$(cp_show)"; key="$(cp_license)"
+    local relay show lic skey payload resp
+    relay="$(cp_relay)"; show="$(cp_show)"; lic="$(cp_license)"; skey="$(cp_showkey)"
     [[ -n "$relay" && -n "$show" ]] || { cp_log "register: relayUrl/showId not set"; return 1; }
-    payload="$(jq -c --arg show "$show" --arg key "$key" \
-        '{show:$show, licenseKey:$key,
+    payload="$(jq -c --arg show "$show" --arg lic "$lic" \
+        '{show:$show, licenseKey:$lic,
           location: (.location // null),
           commands: [ .commands[]? | {id,label,lane,cooldownSec,durationSec,publicSafe} ]}' \
         "$CP_CFG_FILE" 2>/dev/null)"
     [[ -n "$payload" ]] || { cp_log "register: could not build payload"; return 1; }
     resp="$(curl -sS --max-time 15 -X POST "${relay}/api/register" \
-        -H 'Content-Type: application/json' -d "$payload" 2>/dev/null)"
+        -H 'Content-Type: application/json' -H "X-CrowdPlay-Key: ${skey}" \
+        -d "$payload" 2>/dev/null)"
     cp_log "register: -> ${resp:-<no response>}"
+    case "$resp" in
+        *show-taken*) cp_log "register: SHOW ID TAKEN - another player already claimed '${show}'. Pick a different Show name in the CrowdPlay settings." ;;
+    esac
 }
 
 # Report a finished command so the relay releases its resource lane.
 cp_relay_complete() {
-    local id="$1" relay show
-    relay="$(cp_relay)"; show="$(cp_show)"
+    local id="$1" relay show skey
+    relay="$(cp_relay)"; show="$(cp_show)"; skey="$(cp_showkey)"
     [[ -n "$relay" && -n "$show" ]] || return 0
     curl -sS --max-time 10 -X POST "${relay}/api/complete" \
-        -H 'Content-Type: application/json' \
+        -H 'Content-Type: application/json' -H "X-CrowdPlay-Key: ${skey}" \
         -d "$(jq -cn --arg s "$show" --arg i "$id" '{show:$s,id:$i}')" >/dev/null 2>&1 || true
 }

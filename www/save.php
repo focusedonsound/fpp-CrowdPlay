@@ -27,8 +27,9 @@ function cpClean($s) { return str_replace(["\r", "\n"], "", (string)$s); }
 
 function cpDefaultConfig() {
   return [
-    "relayUrl" => "",
+    "relayUrl" => "https://crowdplay-relay.nscilingo.workers.dev",
     "showId" => "",
+    "showKey" => "",
     "licenseKey" => "",
     "fppApi" => "http://127.0.0.1/api/command",
     "poll" => ["mode" => "longpoll", "holdSec" => 25],
@@ -122,6 +123,18 @@ if (isset($_POST['commandsJson'])) {
   }
   $cfg['commands'] = $clean;
 }
+
+// ---- Show identity invariants ----
+// CrowdPlay uses one hosted relay, so never leave the relay blank. And always
+// keep a Show ID + a private Show Key: the key is set once (by the installer or
+// here) and never exposed in the form, so array_replace_recursive preserves it
+// across saves; we only mint one if it's genuinely missing (pre-key configs).
+if (trim((string)($cfg['relayUrl'] ?? '')) === '')
+  $cfg['relayUrl'] = "https://crowdplay-relay.nscilingo.workers.dev";
+if (trim((string)($cfg['showId'] ?? '')) === '')
+  $cfg['showId'] = 'show-' . bin2hex(random_bytes(3));
+if (trim((string)($cfg['showKey'] ?? '')) === '')
+  $cfg['showKey'] = bin2hex(random_bytes(16));
 
 // ---- Atomic write ----
 $tmp = $configFile . ".tmp";

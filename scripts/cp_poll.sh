@@ -18,7 +18,7 @@ cp_ensure_dirs
 
 RELAY_URL="$(cp_cfg '.relayUrl')"
 SHOW_ID="$(cp_cfg '.showId')"
-LICENSE_KEY="$(cp_cfg '.licenseKey')"
+SHOW_KEY="$(cp_cfg '.showKey')"
 HOLD_SEC="$(cp_cfg '.poll.holdSec' '25')"
 
 if [[ -z "$RELAY_URL" || -z "$SHOW_ID" ]]; then
@@ -36,13 +36,20 @@ cp_relay_register || cp_log "poll: initial register failed (will still poll)"
 BACKOFF=1
 
 while [[ $RUNNING -eq 1 ]]; do
-    # TODO(relay): replace with the real long-poll endpoint + auth (HMAC of
-    # showId+timestamp, or a signed poll token). Expected response: a JSON
-    # array of due command ids, e.g. ["wave","snow"], or [] on timeout.
+    # Long-poll for due command ids. Authenticates with the private Show Key
+    # (X-CrowdPlay-Key); the relay returns a JSON array like ["wave","snow"],
+    # or [] on timeout. A 403 {"error":"show-taken"} means another player
+    # claimed this Show ID - handled below.
     RESP="$(curl -sS --max-time "$((HOLD_SEC + 10))" \
                  -H "X-CrowdPlay-Show: ${SHOW_ID}" \
-                 -H "X-CrowdPlay-Key: ${LICENSE_KEY}" \
+                 -H "X-CrowdPlay-Key: ${SHOW_KEY}" \
                  "${RELAY_URL%/}/api/poll?show=${SHOW_ID}&hold=${HOLD_SEC}" 2>/dev/null)" || RESP=""
+
+    case "$RESP" in
+        *show-taken*)
+            cp_log "poll: Show ID '${SHOW_ID}' is owned by another player - check the Show name in CrowdPlay settings. Backing off."
+            sleep 30; continue ;;
+    esac
 
     if [[ -z "$RESP" ]]; then
         # timeout / transient - re-poll with capped backoff
