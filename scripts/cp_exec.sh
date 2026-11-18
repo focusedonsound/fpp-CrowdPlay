@@ -40,7 +40,15 @@ if [[ $RC -ne 0 ]]; then
 fi
 cp_log "exec: id='$CMD_ID' cmd='$FPP_COMMAND' -> ${RESP:-ok}"
 
-# TODO(relay): report completion back to the relay so the resource lane
-# releases. Duration-first: for durationSec==0 read the FSEQ length (or poll
-# /api/effects for early release); for durationSec>0, sleep then issue the
-# matching Stop. See the design doc's Queue & Concurrency section.
+# Hold the resource lane for the command's declared duration, then release it.
+# (cp_exec.sh is already run as a background job per command by cp_poll.sh, so
+# sleeping here only blocks this one command's worker.)
+DURATION="$(jq -r '.durationSec // 0' <<<"$ENTRY")"
+if [[ "$DURATION" =~ ^[0-9]+$ && "$DURATION" -gt 0 ]]; then
+    sleep "$DURATION"
+    cp_log "exec: id='$CMD_ID' held ${DURATION}s"
+    # TODO: if the command has a paired Stop mapping, issue it here too.
+fi
+cp_relay_complete "$CMD_ID"
+# TODO(early-release): when durationSec==0, optionally poll /api/effects to
+# release the lane the moment a self-terminating effect actually ends.

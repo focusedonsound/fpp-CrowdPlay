@@ -27,3 +27,36 @@ cp_cfg() {
 
 # cp_local_fpp_api -> the local FPP command endpoint
 cp_local_fpp_api() { cp_cfg '.fppApi' 'http://127.0.0.1/api/command'; }
+
+# Relay coordinates.
+cp_relay()   { local u; u="$(cp_cfg '.relayUrl')"; printf '%s' "${u%/}"; }
+cp_show()    { cp_cfg '.showId'; }
+cp_license() { cp_cfg '.licenseKey'; }
+
+# Register the exposed-command catalog + location config with the relay.
+# Sends ONLY what the relay needs to queue/gate/render - never fppCommand/args
+# (those stay local; the relay never sees the raw FPP command).
+cp_relay_register() {
+    local relay show key payload resp
+    relay="$(cp_relay)"; show="$(cp_show)"; key="$(cp_license)"
+    [[ -n "$relay" && -n "$show" ]] || { cp_log "register: relayUrl/showId not set"; return 1; }
+    payload="$(jq -c --arg show "$show" --arg key "$key" \
+        '{show:$show, licenseKey:$key,
+          location: (.location // null),
+          commands: [ .commands[]? | {id,label,lane,cooldownSec,durationSec,publicSafe} ]}' \
+        "$CP_CFG_FILE" 2>/dev/null)"
+    [[ -n "$payload" ]] || { cp_log "register: could not build payload"; return 1; }
+    resp="$(curl -sS --max-time 15 -X POST "${relay}/api/register" \
+        -H 'Content-Type: application/json' -d "$payload" 2>/dev/null)"
+    cp_log "register: -> ${resp:-<no response>}"
+}
+
+# Report a finished command so the relay releases its resource lane.
+cp_relay_complete() {
+    local id="$1" relay show
+    relay="$(cp_relay)"; show="$(cp_show)"
+    [[ -n "$relay" && -n "$show" ]] || return 0
+    curl -sS --max-time 10 -X POST "${relay}/api/complete" \
+        -H 'Content-Type: application/json' \
+        -d "$(jq -cn --arg s "$show" --arg i "$id" '{show:$s,id:$i}')" >/dev/null 2>&1 || true
+}

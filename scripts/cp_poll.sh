@@ -30,6 +30,9 @@ RUNNING=1
 trap 'RUNNING=0; cp_log "poll: shutdown requested"' TERM INT
 
 cp_log "poll: starting (relay=$RELAY_URL show=$SHOW_ID hold=${HOLD_SEC}s)"
+# Push the current command catalog + location config to the relay. Re-run the
+# CrowdPlay - Start command after editing settings to re-register.
+cp_relay_register || cp_log "poll: initial register failed (will still poll)"
 BACKOFF=1
 
 while [[ $RUNNING -eq 1 ]]; do
