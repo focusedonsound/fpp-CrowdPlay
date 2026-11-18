@@ -21,7 +21,7 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
 // license server (keys are validated at the relay), and buyers are sent to the
 // show site, mirroring EncoreRadio's signup link. Overridable from config for
 // self-hosters.
-$upgradeUrl = $cfg['upgradeUrl'] ?? 'https://crowdplay-relay.nscilingo.workers.dev/buy';
+$upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay-signup/';
 ?>
 <style>
   #cpWrap{

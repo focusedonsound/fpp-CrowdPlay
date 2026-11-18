@@ -58,21 +58,26 @@ Personal and Commercial unlock the same premium features; the difference is the
 hourly press cap (and Commercial covers ticketed / for-profit shows). The hourly
 cap is per show, counted across all of its controls.
 
-The plugin's **Get a key** button and `upgradeUrl` point at the relay's hosted
-purchase page (`/buy`), which mirrors the EncoreRadio signup flow: pick a tier,
-pay (PayPal, one-time $5 for Personal), receive a key by email, paste it into the
-**License key** field. Keys are minted into the `crowdplay-licenses` D1 with
-`scripts/mint-key.sh` (the manual half of that flow today; a PayPal webhook can
-call the same insert to automate it). The Personal buy button is wired to the
-`PAYPAL_BUY_URL` Worker var — set it to a PayPal.me or hosted-button URL to go
-live; until then the button routes to "contact to purchase."
+The plugin's **Get a key** button and `upgradeUrl` point at the signup page at
+`christmasinboontontwp.com/crowdplay-signup/` (sibling of the EncoreRadio page).
+The static source lives in this repo at [`site/crowdplay-signup/index.html`](site/crowdplay-signup/index.html) —
+upload it to that host, edit the two placeholders (PayPal link + contact email),
+and it's live. It mirrors the EncoreRadio flow: pick a tier, pay (PayPal, one-time
+$5 for Personal), receive a key by email, paste it into the **License key** field.
+Keys are minted into the `crowdplay-licenses` D1 with `scripts/mint-key.sh` in the
+relay repo (the manual half of that flow today; a PayPal webhook can call the same
+insert to automate it).
+
+A live, zero-upload copy of the same page is also served by the relay at
+`https://crowdplay-relay.nscilingo.workers.dev/buy` (its PayPal target is the
+`PAYPAL_BUY_URL` Worker var) — handy as a fallback or for testing.
 
 ## Config (`plugindata/fpp-CrowdPlay/crowdplay.json`)
 
 ```jsonc
 {
   "relayUrl": "https://<your-show>.<you>.workers.dev",
-  "upgradeUrl": "https://crowdplay-relay.nscilingo.workers.dev/buy",  // "Get a key" link
+  "upgradeUrl": "https://christmasinboontontwp.com/crowdplay-signup/",  // "Get a key" link
   "showId": "",
   "licenseKey": "",                                                 // blank = Free tier
   "fppApi": "http://127.0.0.1/api/command",
