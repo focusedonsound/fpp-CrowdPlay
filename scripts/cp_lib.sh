@@ -46,6 +46,7 @@ cp_relay_register() {
     payload="$(jq -c --arg show "$show" --arg lic "$lic" \
         '{show:$show, licenseKey:$lic,
           location: (.location // null),
+          style: (.widget // null),
           commands: [ .commands[]? | {id,label,lane,cooldownSec,durationSec,publicSafe} ]}' \
         "$CP_CFG_FILE" 2>/dev/null)"
     [[ -n "$payload" ]] || { cp_log "register: could not build payload"; return 1; }

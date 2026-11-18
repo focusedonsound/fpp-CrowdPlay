@@ -10,6 +10,7 @@ $licenseKey = $cfg['licenseKey'] ?? '';
 $fppApi     = $cfg['fppApi']     ?? 'http://127.0.0.1/api/command';
 $holdSec    = $cfg['poll']['holdSec'] ?? 25;
 $loc        = $cfg['location'] ?? [];
+$widget     = $cfg['widget']   ?? [];
 $commands   = $cfg['commands']  ?? [];
 $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES);
 $configured = ($relayUrl !== '' && $showId !== '');
@@ -68,6 +69,12 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
     background:var(--cp-field); border:1px solid var(--cp-line); border-radius:10px; outline:none;
   }
   #cpWrap input:focus,#cpWrap select:focus{border-color:var(--cp-brand); box-shadow:0 0 0 3px rgba(109,91,255,.18)}
+  #cpWrap input[type=color]{width:100%; height:42px; padding:4px; cursor:pointer}
+  #cpWrap .cp-badge{display:inline-block; font-weight:700; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:linear-gradient(120deg,var(--cp-brand),var(--cp-brand2)); padding:2px 8px; border-radius:999px; vertical-align:middle; margin-left:6px}
+  #cpWrap table.cp-stats{width:100%; border-collapse:collapse; font-size:13px}
+  #cpWrap table.cp-stats th{text-align:left; color:var(--cp-muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; padding:6px 8px; border-bottom:1px solid var(--cp-line)}
+  #cpWrap table.cp-stats td{padding:7px 8px; border-bottom:1px solid var(--cp-line)}
+  #cpWrap table.cp-stats td.n{text-align:right; font-variant-numeric:tabular-nums; font-weight:600}
   #cpWrap .cp-grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
   #cpWrap .cp-inline{display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap}
   #cpWrap details.cp-adv{margin-top:12px; border-top:1px dashed var(--cp-line); padding-top:10px}
@@ -227,6 +234,21 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
       </div>
       <datalist id="cpFppCommands"></datalist>
       <button type="button" class="cp-add" onclick="cpAddRow()">+ Add command</button>
+      <p class="cp-sub" style="margin:10px 0 0">Free tier exposes up to <b>3</b> controls and <b>30</b> presses per hour (shared across all controls). Personal lifts that to 300/hour, Commercial is uncapped.</p>
+    </section>
+
+    <!-- Widget appearance (premium) -->
+    <section class="cp-card" id="cpCardStyle">
+      <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-1.2-1-1.8-1-2.8 0-.7.6-1.2 1.4-1.2H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/></svg>Widget appearance <span class="cp-badge">Premium</span></h2>
+      <p class="cp-sub">Match the buttons to your site. Applied only on premium shows &mdash; free shows use the default look and a small &ldquo;Powered by CrowdPlay&rdquo; badge. Re-run Start after changing.</p>
+      <div class="cp-grid2">
+        <div><label class="cp-lab">Button color</label>
+          <input type="color" id="wgButtonColor" name="wgButtonColor" value="<?= $h(($widget['buttonColor'] ?? '') ?: '#6d5bff') ?>"></div>
+        <div><label class="cp-lab">Text color</label>
+          <input type="color" id="wgTextColor" name="wgTextColor" value="<?= $h(($widget['textColor'] ?? '') ?: '#ffffff') ?>"></div>
+      </div>
+      <label class="cp-lab">Headline <span class="cp-muted">&mdash; shown above the buttons; optional</span></label>
+      <input type="text" id="wgHeadline" name="wgHeadline" maxlength="60" value="<?= $h($widget['headline'] ?? '') ?>" placeholder="Control the lights!">
     </section>
 
     <!-- Embed -->
@@ -241,6 +263,14 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
         <textarea class="cp-embed" id="cpEmbedAll" rows="3" readonly onclick="this.select()" style="margin-top:8px"></textarea>
         <div><button type="button" class="cp-btn ghost cp-copy" onclick="cpCopyEmbed('cpEmbedAll')">Copy single-widget code</button></div>
       </details>
+    </section>
+
+    <!-- Analytics -->
+    <section class="cp-card" id="cpCardStats">
+      <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Analytics</h2>
+      <p class="cp-sub">How many times each control has been pressed &mdash; live counts from the relay.</p>
+      <div id="cpStats" class="cp-muted">Loading&hellip;</div>
+      <div style="margin-top:12px"><button type="button" class="cp-btn ghost" onclick="cpLoadStats()">Refresh</button></div>
     </section>
 
     <div class="cp-actions">
@@ -377,9 +407,33 @@ async function cpLoadFppCommands(){
   }catch(e){}
 }
 
+function cpEsc(s){ const d=document.createElement('div'); d.textContent=(s==null?'':s); return d.innerHTML; }
+async function cpLoadStats(){
+  const el=document.getElementById('cpStats'); el.textContent='Loading…';
+  try{
+    const r=await fetch(cpUrl('stats.php'),{cache:'no-store'});
+    const d=await r.json();
+    if(d.error){
+      el.textContent = d.error==='not-configured' ? 'Save your show first, then presses will show up here.'
+        : (d.error==='relay-unreachable' ? 'Relay not reachable from this player.' : 'Could not load analytics.');
+      return;
+    }
+    const cap = d.hourlyCap ? (d.lastHourTotal+' / '+d.hourlyCap+' this hour') : (d.lastHourTotal+' this hour (uncapped)');
+    let html='<div style="margin-bottom:10px"><b style="text-transform:capitalize">'+cpEsc(d.tier||'free')+'</b> tier &middot; '+cap+'</div>';
+    if(!d.commands || !d.commands.length){ html+='<div class="cp-muted">No presses yet.</div>'; }
+    else{
+      html+='<table class="cp-stats"><thead><tr><th>Control</th><th style="text-align:right">Total</th><th style="text-align:right">Last hour</th></tr></thead><tbody>';
+      d.commands.forEach(c=>{ html+='<tr><td>'+cpEsc(c.label)+'</td><td class="n">'+(c.total|0)+'</td><td class="n">'+(c.lastHour|0)+'</td></tr>'; });
+      html+='</tbody></table>';
+    }
+    el.innerHTML=html;
+  }catch(e){ el.textContent='Could not load analytics.'; }
+}
+
 (EXISTING.length ? EXISTING : [{}]).forEach(cpAddRow);
 cpLoadFppCommands();
 cpUpdateEmbed();
+cpLoadStats();
 document.getElementById('relayUrl').addEventListener('input', ()=>{ cpUpdateEmbed(); cpRefreshStatus(); });
 document.getElementById('showId').addEventListener('input', ()=>{ cpUpdateEmbed(); cpRefreshStatus(); });
 // Keep the per-control embeds in sync as labels/ids/public toggles change.
@@ -396,9 +450,13 @@ const CP_TOUR_STEPS = [
     text:'Want only people AT the show to play? Turn this on, drop your location, and set a radius. Leave it off to let anyone with the link join.' },
   { selector:'#cpCardCmd', title:'3. Choose what they can trigger',
     text:'Add each FPP command you want to expose — only these can run; the raw command never leaves this player. Set a cooldown, a lane so repeats for one prop queue up, and whether it’s public.' },
-  { selector:'#cpCardEmbed', title:'4. Put it on your site',
-    text:'Copy this iframe into your website or Remote Falcon page. It keeps working even where custom scripts are stripped.' },
-  { selector:'.cp-actions', title:'5. Go live',
+  { selector:'#cpCardStyle', title:'4. Make it yours (premium)',
+    text:'On a premium show, set the button colors and a headline so the widget matches your site. Free shows use the default look with a small “Powered by CrowdPlay” badge.' },
+  { selector:'#cpCardEmbed', title:'5. Put it on your site',
+    text:'Each control is its own button — copy one snippet per control and place them anywhere, or grab all buttons as a single widget. Works even where custom scripts are stripped.' },
+  { selector:'#cpCardStats', title:'6. See what lands',
+    text:'Watch how many times each control gets pressed — live counts from the relay. Handy for spotting the crowd favorites.' },
+  { selector:'.cp-actions', title:'7. Go live',
     text:'Save, then press Start now — or schedule the “CrowdPlay - Start” command before your show. That’s it: the show is in their hands.' }
 ];
 let cpTourIndex = -1, cpTourReposition = null;

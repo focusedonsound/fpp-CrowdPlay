@@ -36,6 +36,7 @@ function cpDefaultConfig() {
     "commands" => [],
     "location" => ["enabled" => false, "lat" => null, "lon" => null,
                    "radiusM" => 300, "toleranceM" => 50, "onDenied" => "strict"],
+    "widget" => ["buttonColor" => "", "textColor" => "", "headline" => ""],
     "ui" => ["onboardingSeen" => false, "onboardingTourEnabled" => true],
   ];
 }
@@ -72,6 +73,18 @@ if (isset($_POST['locRadius']))    $cfg['location']['radiusM']    = max(0, (int)
 if (isset($_POST['locTolerance'])) $cfg['location']['toleranceM'] = max(0, (int)$_POST['locTolerance']);
 if (isset($_POST['locOnDenied']))
   $cfg['location']['onDenied'] = ($_POST['locOnDenied'] === 'lenient') ? 'lenient' : 'strict';
+
+// ---- Widget appearance (premium; relay ignores it on the free tier) ----
+// Validate here too so the stored config stays clean even before the relay
+// sees it: colors must be hex, headline is short and strip-tagged.
+$hexColor = function ($v) {
+  $v = trim((string)$v);
+  return preg_match('/^#[0-9a-fA-F]{3,8}$/', $v) ? $v : "";
+};
+if (isset($_POST['wgButtonColor'])) $cfg['widget']['buttonColor'] = $hexColor($_POST['wgButtonColor']);
+if (isset($_POST['wgTextColor']))   $cfg['widget']['textColor']   = $hexColor($_POST['wgTextColor']);
+if (isset($_POST['wgHeadline']))
+  $cfg['widget']['headline'] = substr(cpClean(trim(str_replace(['<', '>'], '', $_POST['wgHeadline']))), 0, 60);
 
 // ---- Command allowlist ----
 // The UI serializes the editor rows into a single JSON field.
