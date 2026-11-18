@@ -1,0 +1,70 @@
+{
+  "repoName": "fpp-CrowdPlay",
+  "name": "CrowdPlay",
+  "author": "Nick Scilingo Nick S(NJ)",
+  "description": "Put the show in their hands. Let your website visitors trigger your FPP Commands - overlay an effect on a prop, run a snow machine, fire a finale - from a button you embed in your own site or your Remote Falcon page, without ever exposing your show player to the internet. The plugin never opens an inbound port: it polls a hosted relay outbound and runs only the commands you explicitly allow, each with its own execution mode (concurrent overlay or interrupt), rate limit, and cooldown. Visitor requests are gated at the relay with bot protection and rate limiting, and an optional on-site location gate can require a visitor to be within a set distance of the show. Free tier is hosted and capped per hour; a license key (checked against the CrowdPlay relay) removes the cap and unlocks concurrency lanes, custom geofence zones, per-command location rules, a themed widget, and analytics.",
+  "homeURL": "https://github.com/focusedonsound/fpp-CrowdPlay",
+  "srcURL": "https://github.com/focusedonsound/fpp-CrowdPlay.git",
+  "bugURL": "https://github.com/focusedonsound/fpp-CrowdPlay/issues",
+  "iconURL": "https://raw.githubusercontent.com/focusedonsound/fpp-CrowdPlay/master/icon.png",
+  "allowUpdates": 1,
+  "releaseNotesStyle": "gitRelease",
+  "minMemoryMB": 256,
+  "minCpuCores": 1,
+  "privacy": {
+    "summary": "Visitors trigger a set of FPP Commands you choose, through a hosted relay. The plugin polls the relay outbound and runs allowlisted commands locally - the show player is never reachable from the internet. Optional location gating uses the visitor's browser location, checked at the relay and not retained.",
+    "sends": [
+      {
+        "to": "the CrowdPlay relay you configure (a Cloudflare Worker URL)",
+        "what": "your show ID and license key (when validating), outbound poll requests, and command-completion reports. No visitor personal data is sent by the plugin.",
+        "why": "to receive queued visitor commands and validate a license",
+        "alwaysOn": true
+      }
+    ],
+    "collects": [
+      {
+        "what": "Relay URL, show ID, and license key.",
+        "about": "operator",
+        "keptDays": null,
+        "canDelete": true,
+        "where": "plugindata/fpp-CrowdPlay/crowdplay.json (mode 600)"
+      },
+      {
+        "what": "Your exposed-command allowlist and location-gate settings (coordinates, radius, tolerance).",
+        "about": "operator",
+        "keptDays": null,
+        "canDelete": true,
+        "where": "plugindata/fpp-CrowdPlay/crowdplay.json (mode 600)"
+      }
+    ],
+    "sensors": [],
+    "remoteAccess": "internet",
+    "systemChanges": [
+      { "kind": "service", "what": "Runs a lightweight outbound poll loop (started/stopped by the CrowdPlay - Start/Stop commands) that long-polls the relay and runs your allowlisted FPP commands via FPP's own local command API." }
+    ],
+    "closedCode": false,
+    "other": "The plugin is open source. The relay it talks to (queue, rate limiting, bot protection, license validation) is a separate hosted service and is not part of this plugin. The plugin enforces its own command allowlist locally: the relay can only ask it to run commands you have explicitly configured, never arbitrary ones. Location gating is evaluated at the relay from the visitor's browser-reported coordinates; those coordinates are used only for the distance check and are not stored by the plugin. Uninstalling leaves plugindata/fpp-CrowdPlay/ in place so reinstalling keeps your settings."
+  },
+  "versions": [
+    {
+      "minFPPVersion": "9.0",
+      "maxFPPVersion": "9.99",
+      "branch": "master",
+      "sha": "",
+      "platforms": [ "Raspberry Pi", "BeagleBone Black", "BeagleBone 64", "Armbian", "Debian", "Ubuntu" ],
+      "dependencies": {
+        "packages": ["curl", "jq"]
+      }
+    },
+    {
+      "minFPPVersion": "10.0",
+      "maxFPPVersion": "0",
+      "branch": "master",
+      "sha": "",
+      "platforms": [ "Raspberry Pi", "BeagleBone Black", "BeagleBone 64", "Armbian", "Debian", "Ubuntu" ],
+      "dependencies": {
+        "packages": ["curl", "jq"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "CrowdPlay - Start",
+    "description": "Start the CrowdPlay poll loop: connect outbound to the relay and begin running visitor-triggered commands. Schedule this shortly before your show.",
+    "script": "cp_cmd_start.sh"
+  },
+  {
+    "name": "CrowdPlay - Stop",
+    "description": "Stop the CrowdPlay poll loop: disconnect from the relay and stop accepting visitor commands. Schedule this when your show ends.",
+    "script": "cp_cmd_stop.sh"
+  }
+]

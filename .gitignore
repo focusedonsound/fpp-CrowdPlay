@@ -1,0 +1,11 @@
+# Plugin runtime state (never committed)
+state/
+*.pid
+*.log
+
+# Editor / OS cruft
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

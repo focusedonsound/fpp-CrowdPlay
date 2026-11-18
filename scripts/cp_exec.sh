@@ -1,0 +1,46 @@
+#!/bin/bash
+# Execute one allowlisted CrowdPlay command locally via FPP's command API.
+#
+# Usage: cp_exec.sh <command-id>
+#
+# SECURITY: the plugin trusts only its own local allowlist. <command-id>
+# must match an entry in crowdplay.json .commands[]; its fppCommand + args
+# are read from THAT entry, never from anything the relay sends. The relay
+# can only ever name an id you configured - it can never supply a raw FPP
+# command.
+set -uo pipefail
+
+PLUGIN_DIR="$(dirname "$(dirname "$0")")"
+HERE="${PLUGIN_DIR}/scripts"
+# shellcheck source=./cp_lib.sh
+source "${HERE}/cp_lib.sh"
+
+CMD_ID="${1:-}"
+[[ -n "$CMD_ID" ]] || { cp_log "exec: missing command id"; exit 2; }
+
+# Look the id up in the LOCAL allowlist.
+ENTRY="$(jq -c --arg id "$CMD_ID" '.commands[]? | select(.id == $id)' "$CP_CFG_FILE" 2>/dev/null)"
+if [[ -z "$ENTRY" ]]; then
+    cp_log "exec: DENY - id '$CMD_ID' is not in the allowlist"
+    exit 1
+fi
+
+FPP_COMMAND="$(jq -r '.fppCommand' <<<"$ENTRY")"
+ARGS_JSON="$(jq -c '.args // []' <<<"$ENTRY")"
+
+# Build the FPP command payload: {"command": <name>, "args": [ ... ]}
+PAYLOAD="$(jq -cn --arg c "$FPP_COMMAND" --argjson a "$ARGS_JSON" '{command:$c, args:$a}')"
+
+API="$(cp_local_fpp_api)"
+RESP="$(curl -sS --max-time 10 -X POST "$API" -H 'Content-Type: application/json' -d "$PAYLOAD" 2>/dev/null)"
+RC=$?
+if [[ $RC -ne 0 ]]; then
+    cp_log "exec: id='$CMD_ID' cmd='$FPP_COMMAND' FAILED (curl rc=$RC)"
+    exit 1
+fi
+cp_log "exec: id='$CMD_ID' cmd='$FPP_COMMAND' -> ${RESP:-ok}"
+
+# TODO(relay): report completion back to the relay so the resource lane
+# releases. Duration-first: for durationSec==0 read the FSEQ length (or poll
+# /api/effects for early release); for durationSec>0, sleep then issue the
+# matching Stop. See the design doc's Queue & Concurrency section.
