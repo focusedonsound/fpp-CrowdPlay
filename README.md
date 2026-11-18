@@ -43,36 +43,20 @@ Licensing reuses the pattern from `fpp-EncoreRadio-license-server` (Cloudflare W
   auto-stops when the effect ends.
 - **Insert / interrupt** — takes over the show (RF-style), for when you want it to.
 
-## Plans
+## Licensing
 
-One hosted relay for everyone; a license key (validated at the relay, issued by the
-same license server as `fpp-EncoreRadio`) sets the tier. One key unlocks one show.
+CrowdPlay is fully usable for free. Without a license key, a show can expose up to
+**3 controls** and take **30 presses/hour** (shared across all controls). An
+**optional** license key, validated at the relay, raises those limits and enables
+the themed widget, badge removal, and per-show analytics. Per FPP's plugin
+guidelines the plugin UI carries no pricing or promotion — pricing and sign-up live
+off the plugin, on the project website (`upgradeUrl`).
 
-| Plan | Price | Presses/hour | Controls | Styling & analytics | Badge |
-|------|-------|--------------|----------|---------------------|-------|
-| **Free** | $0 | 30 (shared across all controls) | up to 3 | default look | "Powered by CrowdPlay" |
-| **Personal** | $5/year (auto-renews) | 300 | unlimited | custom colors + headline, per-show analytics | none |
-| **Commercial** | contact | uncapped | unlimited | same as Personal | none |
-
-Personal and Commercial unlock the same premium features; the difference is the
-hourly press cap (and Commercial covers ticketed / for-profit shows). The hourly
-cap is per show, counted across all of its controls.
-
-The plugin's **Get a key** button and `upgradeUrl` point at the live signup page at
-`christmasinboontontwp.com/crowdplay-signup/` (sibling of the EncoreRadio page;
-static source in this repo at [`site/crowdplay-signup/index.html`](site/crowdplay-signup/index.html)).
-It mirrors the EncoreRadio flow: a PayPal **Subscribe** button ($5/year, auto-renews),
-and the key is emailed to the buyer, who pastes it into the **License key** field.
-
-Fulfilment is automatic: the shared license server (`fpp-EncoreRadio-license-server`)
-receives the PayPal IPN, mints a `personal`-tier key into the `crowdplay-licenses`
-D1, and emails it over SMTP — routed to CrowdPlay by the button's item name / id.
-For a manual or comp key, `scripts/mint-key.sh` in the relay repo inserts one
-directly.
-
-A live, zero-upload copy of the same page is also served by the relay at
-`https://crowdplay-relay.nscilingo.workers.dev/buy` (its PayPal target is the
-`PAYPAL_BUY_URL` Worker var) — handy as a fallback or for testing.
+**How keys are issued (architecture).** Keys live in the `crowdplay-licenses` D1
+and are validated by the relay. Fulfilment reuses `fpp-EncoreRadio-license-server`:
+its PayPal IPN handler mints a key into that D1 and emails it over SMTP, routed to
+CrowdPlay by the PayPal button's item name / id. `scripts/mint-key.sh` (relay repo)
+issues a manual or comp key directly.
 
 ## Config (`plugindata/fpp-CrowdPlay/crowdplay.json`)
 

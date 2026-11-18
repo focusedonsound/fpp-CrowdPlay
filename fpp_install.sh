@@ -90,6 +90,31 @@ if id fpp >/dev/null 2>&1; then
   chown -R fpp:fpp "$CFG_DIR" "$STATE_DIR" 2>/dev/null || true
 fi
 
-log "fpp-CrowdPlay installed. Open the CrowdPlay page to configure the relay and your commands."
-# NOTE: new plugin commands (CrowdPlay - Start/Stop) need an FPPD restart to
-# appear in the command list. The Plugin Manager prompts for this.
+log "fpp-CrowdPlay installed. Open the CrowdPlay page to configure your show and commands."
+
+# fppd only reads commands/descriptions.json at its own startup, so the first
+# time this plugin's commands (CrowdPlay - Start/Stop) become known an fppd
+# restart is genuinely needed. fpp_install.sh is also the update path, though,
+# and most updates don't touch that file - so only request the restart (which
+# stops a running show) when descriptions.json actually changed, tracked by a
+# hash. Uses FPP's own setSetting restartFlag, not a raw service/host command.
+DESC_HASH_FILE="${CFG_DIR}/.descriptions_json_sha256"
+DESC_FILE="${SELF}/commands/descriptions.json"
+if [[ -f "$DESC_FILE" ]]; then
+  NEW_HASH="$(sha256sum "$DESC_FILE" 2>/dev/null | awk '{print $1}')"
+  PREV_HASH=""
+  [[ -f "$DESC_HASH_FILE" ]] && PREV_HASH="$(cat "$DESC_HASH_FILE" 2>/dev/null || echo "")"
+  if [[ -n "$NEW_HASH" && "$NEW_HASH" != "$PREV_HASH" ]]; then
+    set +u
+    . "${FPPDIR:-/opt/fpp}/scripts/common" 2>/dev/null || true
+    set -u
+    setSetting restartFlag 1 2>/dev/null || true
+    echo "$NEW_HASH" > "$DESC_HASH_FILE" 2>/dev/null || true
+    log "commands/descriptions.json changed - requested an fppd restart so CrowdPlay - Start/Stop register"
+  fi
+  # Installer runs as root; keep the hash file fpp-owned so an fpp-run media
+  # backup/rsync of /home/fpp/media doesn't trip on a root-owned file.
+  if [[ -f "$DESC_HASH_FILE" ]] && id fpp >/dev/null 2>&1; then
+    chown fpp:fpp "$DESC_HASH_FILE" 2>/dev/null || true
+  fi
+fi

@@ -17,10 +17,8 @@ $configured = ($relayUrl !== '' && $showId !== '');
 $ui = $cfg['ui'] ?? [];
 $onboardingSeen = !empty($ui['onboardingSeen']);
 $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
-// Where operators get or upgrade a license key. CrowdPlay reuses EncoreRadio's
-// license server (keys are validated at the relay), and buyers are sent to the
-// show site, mirroring EncoreRadio's signup link. Overridable from config for
-// self-hosters.
+// Off-plugin page with license-key details (kept out of the plugin UI per FPP's
+// plugin guidelines - no in-plugin pricing/promotion). Overridable from config.
 $upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay-signup/';
 ?>
 <style>
@@ -125,18 +123,6 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay
   #cpWrap .cp-btn.primary:hover{filter:brightness(1.06)}
   #cpWrap .cp-btn.ghost{background:var(--cp-field); border-color:var(--cp-line); color:var(--cp-ink)}
   #cpWrap .cp-btn.ghost:hover{border-color:var(--cp-brand); color:var(--cp-brand)}
-  #cpWrap .cp-plans{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:10px}
-  #cpWrap .cp-plan{position:relative; display:flex; flex-direction:column; border:1px solid var(--cp-line); border-radius:12px; padding:16px 14px; background:var(--cp-field)}
-  #cpWrap .cp-plan-pop{border-color:var(--cp-brand); box-shadow:0 10px 26px -14px rgba(109,91,255,.6)}
-  #cpWrap .cp-plan-tag{position:absolute; top:-10px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#fff; background:linear-gradient(120deg,var(--cp-brand),var(--cp-brand2)); padding:3px 10px; border-radius:999px; white-space:nowrap}
-  #cpWrap .cp-plan-name{font-weight:700; font-size:15px}
-  #cpWrap .cp-plan-price{font-size:26px; font-weight:800; margin:4px 0 10px; color:var(--cp-brand)}
-  #cpWrap .cp-plan-price span{font-size:12px; font-weight:600; color:var(--cp-muted)}
-  #cpWrap .cp-plan-feat{list-style:none; margin:0 0 14px; padding:0; font-size:13px; line-height:1.5; flex:1}
-  #cpWrap .cp-plan-feat li{position:relative; padding-left:18px; margin:3px 0}
-  #cpWrap .cp-plan-feat li::before{content:"\2713"; position:absolute; left:0; color:var(--cp-good); font-weight:700}
-  #cpWrap a.cp-plan-cta{display:block; text-align:center; text-decoration:none; font-size:14px; font-weight:650; padding:9px 14px; border-radius:11px; border:1px solid transparent; margin-top:auto}
-  @media (max-width:640px){ #cpWrap .cp-plans{grid-template-columns:1fr} }
   #cpWrap #cpMsg{margin-left:auto; font-weight:650; font-size:13.5px; min-height:1.2em}
   #cpWrap .cp-muted{color:var(--cp-muted)}
   #cpWrap a{color:var(--cp-brand)}
@@ -193,16 +179,16 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay
     <!-- Relay -->
     <section class="cp-card" id="cpCardRelay">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.5a7 7 0 0 1 14 0"/><path d="M8 15a4 4 0 0 1 8 0"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg>Your show</h2>
-      <p class="cp-sub">CrowdPlay is hosted for you &mdash; there's nothing to deploy and no port to open. This player is already connected; just give your show a name. Paste a license key to unlock premium.</p>
+      <p class="cp-sub">CrowdPlay is hosted for you &mdash; there's nothing to deploy and no port to open. This player is already connected; just give your show a name.</p>
       <label class="cp-lab">Show name <span class="cp-muted">&mdash; appears in your embed link; must be unique</span></label>
       <input type="text" id="showId" name="showId" value="<?= $h($showId) ?>" placeholder="my-show">
-      <label class="cp-lab">License key <span class="cp-muted">(blank = free tier)</span></label>
-      <input type="text" id="licenseKey" name="licenseKey" value="<?= $h($licenseKey) ?>" placeholder="unlock premium">
-      <p class="cp-sub" style="margin:6px 0 0; font-size:12.5px">No key yet? See <a href="#cpCardPlans">Plans</a> below &mdash; free to start, $5 to go Personal.</p>
+      <label class="cp-lab">License key <span class="cp-muted">(optional)</span></label>
+      <input type="text" id="licenseKey" name="licenseKey" value="<?= $h($licenseKey) ?>" placeholder="paste your license key">
+      <p class="cp-sub" style="margin:6px 0 0; font-size:12.5px">CrowdPlay works without a key. A license key is optional and raises the per-hour and control limits &mdash; <a href="<?= $h($upgradeUrl) ?>" target="_blank" rel="noopener">details</a>.</p>
       <details class="cp-adv">
         <summary>Advanced</summary>
         <label class="cp-lab">Relay URL <span class="cp-muted">&mdash; hosted for you; only change this if you self-host</span></label>
-        <input type="text" id="relayUrl" name="relayUrl" value="<?= $h($relayUrl) ?>" placeholder="https://crowdplay-relay.nscilingo.workers.dev">
+        <input type="text" id="relayUrl" name="relayUrl" value="<?= $h($relayUrl) ?>" placeholder="https://your-relay.example.workers.dev">
         <div class="cp-grid2">
           <div><label class="cp-lab">Local FPP command API</label>
             <input type="text" id="fppApi" name="fppApi" value="<?= $h($fppApi) ?>"></div>
@@ -210,47 +196,6 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay
             <input type="number" id="holdSec" name="holdSec" min="1" max="300" value="<?= $h($holdSec) ?>"></div>
         </div>
       </details>
-    </section>
-
-    <!-- Plans -->
-    <section class="cp-card" id="cpCardPlans">
-      <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-6 9 6"/><path d="M5 9v10h14V9"/><path d="M9 19v-5h6v5"/></svg>Plans</h2>
-      <p class="cp-sub">Start free, upgrade when your crowd grows. One key unlocks one show &mdash; paste it in <a href="#cpCardRelay" onclick="var e=document.getElementById('licenseKey'); if(e) e.focus();">Your show</a> above.</p>
-      <div class="cp-plans">
-        <div class="cp-plan">
-          <div class="cp-plan-name">Free</div>
-          <div class="cp-plan-price">$0</div>
-          <ul class="cp-plan-feat">
-            <li>Up to 3 controls</li>
-            <li>30 presses/hour (shared)</li>
-            <li>Default button look</li>
-            <li>&ldquo;Powered by CrowdPlay&rdquo; badge</li>
-          </ul>
-        </div>
-        <div class="cp-plan cp-plan-pop">
-          <div class="cp-plan-tag">Recommended</div>
-          <div class="cp-plan-name">Personal</div>
-          <div class="cp-plan-price">$5 <span>/year</span></div>
-          <ul class="cp-plan-feat">
-            <li>300 presses/hour</li>
-            <li>Unlimited controls</li>
-            <li>Your colors &amp; headline</li>
-            <li>No CrowdPlay badge</li>
-            <li>Per-show analytics</li>
-          </ul>
-          <a class="cp-btn primary cp-plan-cta" href="<?= $h($upgradeUrl) ?>" target="_blank" rel="noopener">Get a key</a>
-        </div>
-        <div class="cp-plan">
-          <div class="cp-plan-name">Commercial</div>
-          <div class="cp-plan-price">Contact</div>
-          <ul class="cp-plan-feat">
-            <li>Uncapped presses</li>
-            <li>Everything in Personal</li>
-            <li>Ticketed &amp; for-profit shows</li>
-          </ul>
-          <a class="cp-btn ghost cp-plan-cta" href="<?= $h($upgradeUrl) ?>" target="_blank" rel="noopener">Contact us</a>
-        </div>
-      </div>
     </section>
 
     <!-- Location -->
@@ -294,13 +239,13 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? 'https://christmasinboontontwp.com/crowdplay
       </div>
       <datalist id="cpFppCommands"></datalist>
       <button type="button" class="cp-add" onclick="cpAddRow()">+ Add command</button>
-      <p class="cp-sub" style="margin:10px 0 0">Free tier exposes up to <b>3</b> controls and <b>30</b> presses per hour (shared across all controls). Personal lifts that to 300/hour, Commercial is uncapped.</p>
+      <p class="cp-sub" style="margin:10px 0 0">Without a license key, a show can expose up to <b>3</b> controls and take <b>30</b> presses per hour (shared across all controls). A license key raises both limits.</p>
     </section>
 
     <!-- Widget appearance (premium) -->
     <section class="cp-card" id="cpCardStyle">
-      <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-1.2-1-1.8-1-2.8 0-.7.6-1.2 1.4-1.2H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/></svg>Widget appearance <span class="cp-badge">Premium</span></h2>
-      <p class="cp-sub">Match the buttons to your site. Applied only on premium shows &mdash; free shows use the default look and a small &ldquo;Powered by CrowdPlay&rdquo; badge. Re-run Start after changing.</p>
+      <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-1.2-1-1.8-1-2.8 0-.7.6-1.2 1.4-1.2H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/></svg>Widget appearance</h2>
+      <p class="cp-sub">Match the buttons to your site. Applied on licensed shows; without a license key the widget uses the default look and a small &ldquo;Powered by CrowdPlay&rdquo; badge. Re-run Start after changing.</p>
       <div class="cp-grid2">
         <div><label class="cp-lab">Button color</label>
           <input type="color" id="wgButtonColor" name="wgButtonColor" value="<?= $h(($widget['buttonColor'] ?? '') ?: '#6d5bff') ?>"></div>
@@ -522,8 +467,8 @@ const CP_TOUR_STEPS = [
     text:'Want only people AT the show to play? Turn this on, drop your location, and set a radius. Leave it off to let anyone with the link join.' },
   { selector:'#cpCardCmd', title:'3. Choose what they can trigger',
     text:'Add each FPP command you want to expose — only these can run; the raw command never leaves this player. Set a cooldown, a lane so repeats for one prop queue up, and whether it’s public.' },
-  { selector:'#cpCardStyle', title:'4. Make it yours (premium)',
-    text:'On a premium show, set the button colors and a headline so the widget matches your site. Free shows use the default look with a small “Powered by CrowdPlay” badge.' },
+  { selector:'#cpCardStyle', title:'4. Make it yours',
+    text:'With a license key, set the button colors and a headline so the widget matches your site. Without one, the widget uses the default look with a small “Powered by CrowdPlay” badge.' },
   { selector:'#cpCardEmbed', title:'5. Put it on your site',
     text:'Each control is its own button — copy one snippet per control and place them anywhere, or grab all buttons as a single widget. Works even where custom scripts are stripped.' },
   { selector:'#cpCardStats', title:'6. See what lands',
