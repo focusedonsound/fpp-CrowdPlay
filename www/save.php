@@ -28,6 +28,7 @@ function cpClean($s) { return str_replace(["\r", "\n"], "", (string)$s); }
 function cpDefaultConfig() {
   return [
     "relayUrl" => "https://crowdplay-relay.nscilingo.workers.dev",
+    "upgradeUrl" => "https://crowdplay-relay.nscilingo.workers.dev/buy",
     "showId" => "",
     "showKey" => "",
     "licenseKey" => "",

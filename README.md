@@ -43,13 +43,38 @@ Licensing reuses the pattern from `fpp-EncoreRadio-license-server` (Cloudflare W
   auto-stops when the effect ends.
 - **Insert / interrupt** — takes over the show (RF-style), for when you want it to.
 
+## Plans
+
+One hosted relay for everyone; a license key (validated at the relay, issued by the
+same license server as `fpp-EncoreRadio`) sets the tier. One key unlocks one show.
+
+| Plan | Price | Presses/hour | Controls | Styling & analytics | Badge |
+|------|-------|--------------|----------|---------------------|-------|
+| **Free** | $0 | 30 (shared across all controls) | up to 3 | default look | "Powered by CrowdPlay" |
+| **Personal** | $5 one-time | 300 | unlimited | custom colors + headline, per-show analytics | none |
+| **Commercial** | contact | uncapped | unlimited | same as Personal | none |
+
+Personal and Commercial unlock the same premium features; the difference is the
+hourly press cap (and Commercial covers ticketed / for-profit shows). The hourly
+cap is per show, counted across all of its controls.
+
+The plugin's **Get a key** button and `upgradeUrl` point at the relay's hosted
+purchase page (`/buy`), which mirrors the EncoreRadio signup flow: pick a tier,
+pay (PayPal, one-time $5 for Personal), receive a key by email, paste it into the
+**License key** field. Keys are minted into the `crowdplay-licenses` D1 with
+`scripts/mint-key.sh` (the manual half of that flow today; a PayPal webhook can
+call the same insert to automate it). The Personal buy button is wired to the
+`PAYPAL_BUY_URL` Worker var — set it to a PayPal.me or hosted-button URL to go
+live; until then the button routes to "contact to purchase."
+
 ## Config (`plugindata/fpp-CrowdPlay/crowdplay.json`)
 
 ```jsonc
 {
   "relayUrl": "https://<your-show>.<you>.workers.dev",
+  "upgradeUrl": "https://crowdplay-relay.nscilingo.workers.dev/buy",  // "Get a key" link
   "showId": "",
-  "licenseKey": "",
+  "licenseKey": "",                                                 // blank = Free tier
   "fppApi": "http://127.0.0.1/api/command",
   "poll": { "mode": "longpoll", "holdSec": 25 },
   "commands": [

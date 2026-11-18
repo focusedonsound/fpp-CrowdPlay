@@ -17,6 +17,11 @@ $configured = ($relayUrl !== '' && $showId !== '');
 $ui = $cfg['ui'] ?? [];
 $onboardingSeen = !empty($ui['onboardingSeen']);
 $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
+// Where operators get or upgrade a license key. CrowdPlay reuses EncoreRadio's
+// license server (keys are validated at the relay), and buyers are sent to the
+// show site, mirroring EncoreRadio's signup link. Overridable from config for
+// self-hosters.
+$upgradeUrl = $cfg['upgradeUrl'] ?? 'https://crowdplay-relay.nscilingo.workers.dev/buy';
 ?>
 <style>
   #cpWrap{
@@ -120,6 +125,18 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
   #cpWrap .cp-btn.primary:hover{filter:brightness(1.06)}
   #cpWrap .cp-btn.ghost{background:var(--cp-field); border-color:var(--cp-line); color:var(--cp-ink)}
   #cpWrap .cp-btn.ghost:hover{border-color:var(--cp-brand); color:var(--cp-brand)}
+  #cpWrap .cp-plans{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:10px}
+  #cpWrap .cp-plan{position:relative; display:flex; flex-direction:column; border:1px solid var(--cp-line); border-radius:12px; padding:16px 14px; background:var(--cp-field)}
+  #cpWrap .cp-plan-pop{border-color:var(--cp-brand); box-shadow:0 10px 26px -14px rgba(109,91,255,.6)}
+  #cpWrap .cp-plan-tag{position:absolute; top:-10px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#fff; background:linear-gradient(120deg,var(--cp-brand),var(--cp-brand2)); padding:3px 10px; border-radius:999px; white-space:nowrap}
+  #cpWrap .cp-plan-name{font-weight:700; font-size:15px}
+  #cpWrap .cp-plan-price{font-size:26px; font-weight:800; margin:4px 0 10px; color:var(--cp-brand)}
+  #cpWrap .cp-plan-price span{font-size:12px; font-weight:600; color:var(--cp-muted)}
+  #cpWrap .cp-plan-feat{list-style:none; margin:0 0 14px; padding:0; font-size:13px; line-height:1.5; flex:1}
+  #cpWrap .cp-plan-feat li{position:relative; padding-left:18px; margin:3px 0}
+  #cpWrap .cp-plan-feat li::before{content:"\2713"; position:absolute; left:0; color:var(--cp-good); font-weight:700}
+  #cpWrap a.cp-plan-cta{display:block; text-align:center; text-decoration:none; font-size:14px; font-weight:650; padding:9px 14px; border-radius:11px; border:1px solid transparent; margin-top:auto}
+  @media (max-width:640px){ #cpWrap .cp-plans{grid-template-columns:1fr} }
   #cpWrap #cpMsg{margin-left:auto; font-weight:650; font-size:13.5px; min-height:1.2em}
   #cpWrap .cp-muted{color:var(--cp-muted)}
   #cpWrap a{color:var(--cp-brand)}
@@ -181,6 +198,7 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
       <input type="text" id="showId" name="showId" value="<?= $h($showId) ?>" placeholder="my-show">
       <label class="cp-lab">License key <span class="cp-muted">(blank = free tier)</span></label>
       <input type="text" id="licenseKey" name="licenseKey" value="<?= $h($licenseKey) ?>" placeholder="unlock premium">
+      <p class="cp-sub" style="margin:6px 0 0; font-size:12.5px">No key yet? See <a href="#cpCardPlans">Plans</a> below &mdash; free to start, $5 to go Personal.</p>
       <details class="cp-adv">
         <summary>Advanced</summary>
         <label class="cp-lab">Relay URL <span class="cp-muted">&mdash; hosted for you; only change this if you self-host</span></label>
@@ -192,6 +210,47 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
             <input type="number" id="holdSec" name="holdSec" min="1" max="300" value="<?= $h($holdSec) ?>"></div>
         </div>
       </details>
+    </section>
+
+    <!-- Plans -->
+    <section class="cp-card" id="cpCardPlans">
+      <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-6 9 6"/><path d="M5 9v10h14V9"/><path d="M9 19v-5h6v5"/></svg>Plans</h2>
+      <p class="cp-sub">Start free, upgrade when your crowd grows. One key unlocks one show &mdash; paste it in <a href="#cpCardRelay" onclick="var e=document.getElementById('licenseKey'); if(e) e.focus();">Your show</a> above.</p>
+      <div class="cp-plans">
+        <div class="cp-plan">
+          <div class="cp-plan-name">Free</div>
+          <div class="cp-plan-price">$0</div>
+          <ul class="cp-plan-feat">
+            <li>Up to 3 controls</li>
+            <li>30 presses/hour (shared)</li>
+            <li>Default button look</li>
+            <li>&ldquo;Powered by CrowdPlay&rdquo; badge</li>
+          </ul>
+        </div>
+        <div class="cp-plan cp-plan-pop">
+          <div class="cp-plan-tag">Recommended</div>
+          <div class="cp-plan-name">Personal</div>
+          <div class="cp-plan-price">$5 <span>one-time</span></div>
+          <ul class="cp-plan-feat">
+            <li>300 presses/hour</li>
+            <li>Unlimited controls</li>
+            <li>Your colors &amp; headline</li>
+            <li>No CrowdPlay badge</li>
+            <li>Per-show analytics</li>
+          </ul>
+          <a class="cp-btn primary cp-plan-cta" href="<?= $h($upgradeUrl) ?>" target="_blank" rel="noopener">Get a key</a>
+        </div>
+        <div class="cp-plan">
+          <div class="cp-plan-name">Commercial</div>
+          <div class="cp-plan-price">Contact</div>
+          <ul class="cp-plan-feat">
+            <li>Uncapped presses</li>
+            <li>Everything in Personal</li>
+            <li>Ticketed &amp; for-profit shows</li>
+          </ul>
+          <a class="cp-btn ghost cp-plan-cta" href="<?= $h($upgradeUrl) ?>" target="_blank" rel="noopener">Contact us</a>
+        </div>
+      </div>
     </section>
 
     <!-- Location -->
