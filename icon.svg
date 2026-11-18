@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6D5BFF"/>
+      <stop offset="1" stop-color="#9B4DFF"/>
+    </linearGradient>
+    <linearGradient id="btn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD66B"/>
+      <stop offset="1" stop-color="#FF9F1C"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFD66B" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#FFD66B" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- app-icon background -->
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+
+  <!-- phone -->
+  <rect x="150" y="86" width="196" height="340" rx="34" fill="#ffffff"/>
+  <rect x="168" y="116" width="160" height="280" rx="16" fill="#1C1340"/>
+  <rect x="226" y="100" width="44" height="8" rx="4" fill="#CBB8FF"/>
+
+  <!-- button glow + tap ripples -->
+  <circle cx="248" cy="236" r="104" fill="url(#glow)"/>
+  <circle cx="248" cy="236" r="84" fill="none" stroke="#FFD66B" stroke-opacity="0.30" stroke-width="7"/>
+  <circle cx="248" cy="236" r="66" fill="none" stroke="#FFD66B" stroke-opacity="0.55" stroke-width="7"/>
+
+  <!-- the button -->
+  <circle cx="248" cy="236" r="50" fill="url(#btn)"/>
+
+  <!-- pressing finger (white, angled up into the button) -->
+  <g transform="rotate(26 300 360)">
+    <rect x="276" y="236" width="56" height="170" rx="28" fill="#ffffff"/>
+    <circle cx="304" cy="250" r="30" fill="#ffffff"/>
+  </g>
+
+  <!-- light sparkles -->
+  <g fill="#ffffff">
+    <path d="M196 150 l5 13 13 5 -13 5 -5 13 -5 -13 -13 -5 13 -5z" opacity="0.95"/>
+    <path d="M312 170 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4z" opacity="0.85"/>
+    <path d="M300 338 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4z" opacity="0.8"/>
+  </g>
+</svg>
