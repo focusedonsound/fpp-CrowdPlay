@@ -232,9 +232,15 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
     <!-- Embed -->
     <section class="cp-card" id="cpCardEmbed">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>Embed</h2>
-      <p class="cp-sub">Paste into your own site or your Remote Falcon page &mdash; it keeps working inside an iframe.</p>
-      <textarea class="cp-embed" id="cpEmbed" rows="3" readonly onclick="this.select()"></textarea>
-      <div><button type="button" class="cp-btn ghost cp-copy" onclick="cpCopyEmbed()">Copy embed code</button></div>
+      <p class="cp-sub">Each control is its own button, so you can place them anywhere on your site or Remote Falcon page. Copy one snippet per control below &mdash; or grab all buttons as a single widget.</p>
+      <label class="cp-lab">One button per control <span class="cp-muted">&mdash; paste each wherever you like</span></label>
+      <textarea class="cp-embed" id="cpEmbed" rows="8" readonly onclick="this.select()"></textarea>
+      <div><button type="button" class="cp-btn ghost cp-copy" onclick="cpCopyEmbed()">Copy per-control code</button></div>
+      <details class="cp-adv">
+        <summary>Or: all buttons as one widget</summary>
+        <textarea class="cp-embed" id="cpEmbedAll" rows="3" readonly onclick="this.select()" style="margin-top:8px"></textarea>
+        <div><button type="button" class="cp-btn ghost cp-copy" onclick="cpCopyEmbed('cpEmbedAll')">Copy single-widget code</button></div>
+      </details>
     </section>
 
     <div class="cp-actions">
@@ -320,16 +326,39 @@ function cpUseMyLocation(){
     ()=>msg('Could not get location', true), {enableHighAccuracy:true,timeout:10000});
 }
 
+function cpEmbedBase(){ return document.getElementById('relayUrl').value.trim().replace(/\/+$/,''); }
+// Mirror save.php's id derivation so the embed's cmd id matches what the relay
+// stores (id if given, else a slug of the label).
+function cpCmdId(c){
+  let id=(c.id||'').trim();
+  if(!id) id=(c.label||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return id;
+}
+// One <iframe> per public-safe control, each firing just that command.
+function cpEmbedPerCommand(){
+  const relay=cpEmbedBase(), show=document.getElementById('showId').value.trim();
+  if(!relay || !show) return '(set a Show name, add a control, then Save)';
+  const rows=cpCollect().filter(c=>c.publicSafe && cpCmdId(c) && c.label);
+  if(!rows.length) return '(add at least one public control above, then Save)';
+  const showE=encodeURIComponent(show);
+  return rows.map(c=>{
+    const id=encodeURIComponent(cpCmdId(c));
+    return '<!-- '+c.label+' -->\n<iframe src="'+relay+'/widget?show='+showE+'&cmd='+id+'"\n        width="240" height="96" style="border:0" allow="geolocation"></iframe>';
+  }).join('\n\n');
+}
+// All controls stacked in one widget.
 function cpEmbedCode(){
-  const relay=document.getElementById('relayUrl').value.trim().replace(/\/+$/,'');
-  const show=encodeURIComponent(document.getElementById('showId').value.trim());
+  const relay=cpEmbedBase(), show=encodeURIComponent(document.getElementById('showId').value.trim());
   return (relay && show)
     ? '<iframe src="'+relay+'/widget?show='+show+'"\n        width="320" height="420" style="border:0"\n        allow="geolocation"></iframe>'
-    : '(set a Relay URL and Show ID, then Save)';
+    : '(set a Show name and Save)';
 }
-function cpUpdateEmbed(){ document.getElementById('cpEmbed').value = cpEmbedCode(); }
-function cpCopyEmbed(){
-  const t=document.getElementById('cpEmbed'); t.select();
+function cpUpdateEmbed(){
+  document.getElementById('cpEmbed').value = cpEmbedPerCommand();
+  const a=document.getElementById('cpEmbedAll'); if(a) a.value = cpEmbedCode();
+}
+function cpCopyEmbed(which){
+  const t=document.getElementById(which||'cpEmbed'); t.select();
   navigator.clipboard ? navigator.clipboard.writeText(t.value).then(()=>msg('Embed code copied ✓')) : document.execCommand('copy');
 }
 function cpRefreshStatus(){
@@ -353,6 +382,9 @@ cpLoadFppCommands();
 cpUpdateEmbed();
 document.getElementById('relayUrl').addEventListener('input', ()=>{ cpUpdateEmbed(); cpRefreshStatus(); });
 document.getElementById('showId').addEventListener('input', ()=>{ cpUpdateEmbed(); cpRefreshStatus(); });
+// Keep the per-control embeds in sync as labels/ids/public toggles change.
+document.getElementById('cpCmdBody').addEventListener('input', cpUpdateEmbed);
+document.getElementById('cpCmdBody').addEventListener('change', cpUpdateEmbed);
 
 // --- First-run guided walkthrough (spotlight + popup over this page) ---
 const CP_TOUR_STEPS = [
