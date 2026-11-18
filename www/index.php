@@ -206,6 +206,7 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
           <input type="text" id="locLon" name="locLon" value="<?= $h($loc['lon'] ?? '') ?>"></div>
         <button type="button" class="cp-btn ghost" onclick="cpUseMyLocation()">Use my location</button>
       </div>
+      <p class="cp-sub" style="margin-top:6px">&ldquo;Use my location&rdquo; needs an HTTPS page, so it may be blocked here on FPP's HTTP page &mdash; you can <a href="https://www.google.com/maps" target="_blank" rel="noopener">look up your coordinates</a> (right-click your spot in Google Maps) and type them in.</p>
       <div class="cp-grid2" style="margin-top:4px">
         <div><label class="cp-lab">Allowed radius (m)</label>
           <input type="number" id="locRadius" name="locRadius" min="0" value="<?= $h($loc['radiusM'] ?? 300) ?>"></div>
@@ -349,11 +350,23 @@ async function cpStart(){ msg((await cpCommand('CrowdPlay - Start')) ? 'Start se
 async function cpStop(){ msg((await cpCommand('CrowdPlay - Stop')) ? 'Stop sent ✓' : 'Stop failed', false); }
 
 function cpUseMyLocation(){
-  if(!navigator.geolocation){ msg('No geolocation in this browser', true); return; }
+  if(!navigator.geolocation){ msg('This browser has no geolocation.', true); return; }
+  // FPP's settings page is served over plain HTTP; browsers only expose
+  // geolocation on a secure context (HTTPS or localhost), so this button
+  // can't work from a LAN IP. Guide the user to manual entry instead.
+  if(window.isSecureContext === false){
+    msg('Your browser blocks location on this non-HTTPS page. Enter latitude/longitude by hand below — use the "look it up" link.', true);
+    return;
+  }
+  msg('Getting location…');
   navigator.geolocation.getCurrentPosition(
     p=>{ document.getElementById('locLat').value=p.coords.latitude.toFixed(6);
          document.getElementById('locLon').value=p.coords.longitude.toFixed(6); msg('Location captured ✓'); },
-    ()=>msg('Could not get location', true), {enableHighAccuracy:true,timeout:10000});
+    err=>{
+      const m = (err&&err.code===1)?'permission denied':(err&&err.code===2)?'position unavailable':(err&&err.code===3)?'timed out':'unknown error';
+      msg('Could not get location ('+m+'). On a non-HTTPS page browsers often block this — enter latitude/longitude by hand below.', true);
+    },
+    {enableHighAccuracy:true,timeout:10000});
 }
 
 function cpEmbedBase(){ return document.getElementById('relayUrl').value.trim().replace(/\/+$/,''); }
