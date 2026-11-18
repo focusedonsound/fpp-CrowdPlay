@@ -178,16 +178,9 @@
         <span class="cp-price-note">per year &middot; auto-renews &middot; one show</span>
       </div>
 
-      <!--
-        PayPal setup (for Nick): create a "Subscribe" button in PayPal
-        (Business account > Tools > PayPal Buttons > Subscribe, Yearly billing
-        cycle, $5 USD), then copy the "hosted_button_id" value PayPal gives you
-        and paste it in place of REPLACE_WITH_CROWDPLAY_HOSTED_BUTTON_ID below.
-        Also turn ON Account Settings > Notifications > Instant Payment
-        Notifications and point it at the CrowdPlay IPN handler, which mints the
-        key into the crowdplay-licenses D1 and emails it (same as EncoreRadio):
-        https://encoreradio-license.nscilingo.workers.dev/api/paypal-ipn
-      -->
+      <!-- Live PayPal yearly Subscribe button ($5 USD). On payment, the shared
+           license server's IPN mints a personal-tier key and emails it. -->
+
       <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
         <input type="hidden" name="cmd" value="_s-xclick">
         <input type="hidden" name="hosted_button_id" value="2QC74PAH2PW7L">
