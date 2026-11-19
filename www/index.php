@@ -24,6 +24,18 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
 // FPP's plugin guidelines forbid pricing/promotion or payment links in a plugin,
 // so nothing ships pointing at a purchase page. Set it in config if you want a link.
 $upgradeUrl = $cfg['upgradeUrl'] ?? '';
+
+// Plugin version shown in the page header. Prefer the git tag of this installed
+// checkout (FPP installs plugins as git clones), and fall back to the committed
+// VERSION file if git isn't available.
+$cpVersion = '';
+$cpRoot = dirname(__DIR__);
+$cpGitVer = @trim((string)@shell_exec('git -C ' . escapeshellarg($cpRoot) . ' describe --tags --abbrev=0 2>/dev/null'));
+if ($cpGitVer !== '') {
+    $cpVersion = $cpGitVer;
+} elseif (is_file($cpRoot . '/VERSION')) {
+    $cpVersion = 'v' . ltrim(trim((string)@file_get_contents($cpRoot . '/VERSION')), 'v');
+}
 ?>
 <style>
   #cpWrap{
@@ -78,6 +90,7 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? '';
   #cpWrap input:focus,#cpWrap select:focus{border-color:var(--cp-brand); box-shadow:0 0 0 3px rgba(109,91,255,.18)}
   #cpWrap input[type=color]{width:100%; height:42px; padding:4px; cursor:pointer}
   #cpWrap .cp-badge{display:inline-block; font-weight:700; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:linear-gradient(120deg,var(--cp-brand),var(--cp-brand2)); padding:2px 8px; border-radius:999px; vertical-align:middle; margin-left:6px}
+  #cpWrap .cp-ver{font-size:12px; font-weight:600; color:var(--cp-muted); vertical-align:middle; margin-left:8px; letter-spacing:.02em}
   #cpWrap table.cp-stats{width:100%; border-collapse:collapse; font-size:13px}
   #cpWrap table.cp-stats th{text-align:left; color:var(--cp-muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; padding:6px 8px; border-bottom:1px solid var(--cp-line)}
   #cpWrap table.cp-stats td{padding:7px 8px; border-bottom:1px solid var(--cp-line)}
@@ -166,7 +179,7 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? '';
       <g transform="rotate(26 300 360)"><rect x="276" y="236" width="56" height="170" rx="28" fill="#ffffff"/><circle cx="304" cy="250" r="30" fill="#ffffff"/></g>
     </svg>
     <div>
-      <h1>CrowdPlay</h1>
+      <h1>CrowdPlay<?php if ($cpVersion !== ''): ?> <span class="cp-ver"><?= $h($cpVersion) ?></span><?php endif; ?></h1>
       <p class="cp-tag">Put the show in their hands.</p>
     </div>
     <div class="cp-status">
