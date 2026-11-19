@@ -43,16 +43,34 @@ cp_showkey() { cp_cfg '.showKey'; }
 # Sends ONLY what the relay needs to queue/gate/render - never fppCommand/args
 # (those stay local; the relay never sees the raw FPP command).
 cp_relay_register() {
-    local relay show lic skey payload resp
+    local relay show lic skey payload jqerr resp
     relay="$(cp_relay)"; show="$(cp_show)"; lic="$(cp_license)"; skey="$(cp_showkey)"
     [[ -n "$relay" && -n "$show" ]] || { cp_log "register: relayUrl/showId not set"; return 1; }
+    # Build the registration payload. IMPORTANT: use explicit "{key: .field}"
+    # form - jq 1.6 (shipped with FPP) does NOT accept the "{field}" object
+    # shorthand and fails to compile the whole program, producing no output.
+    # Capture jq's stderr so a failure says WHY instead of a vague message.
+    jqerr="$(mktemp 2>/dev/null)"
     payload="$(jq -c --arg show "$show" --arg lic "$lic" \
-        '{show:$show, licenseKey:$lic,
+        '{show: $show,
+          licenseKey: $lic,
           location: (.location // null),
           style: (.widget // null),
-          commands: [ .commands[]? | {id,label,lane,cooldownSec,durationSec,publicSafe} ]}' \
-        "$CP_CFG_FILE" 2>/dev/null)"
-    [[ -n "$payload" ]] || { cp_log "register: could not build payload"; return 1; }
+          commands: [ .commands[]? | {
+              id: .id,
+              label: .label,
+              lane: .lane,
+              cooldownSec: .cooldownSec,
+              durationSec: .durationSec,
+              publicSafe: .publicSafe
+          } ]}' \
+        "$CP_CFG_FILE" 2>"${jqerr:-/dev/null}")"
+    if [[ -z "$payload" ]]; then
+        cp_log "register: could not build payload${jqerr:+ ($(tr '\n' ' ' < "$jqerr" 2>/dev/null))}"
+        [[ -n "$jqerr" ]] && rm -f "$jqerr"
+        return 1
+    fi
+    [[ -n "$jqerr" ]] && rm -f "$jqerr"
     resp="$(curl -sS --max-time 15 -X POST "${relay}/api/register" \
         -H 'Content-Type: application/json' -H "X-CrowdPlay-Key: ${skey}" \
         -d "$payload" 2>/dev/null)"
