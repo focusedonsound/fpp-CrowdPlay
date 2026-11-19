@@ -167,4 +167,16 @@ if ($ok === false) cpRespond(false, "Could not write config.");
 @chmod($tmp, 0600);
 if (!@rename($tmp, $configFile)) { @unlink($tmp); cpRespond(false, "Could not save config."); }
 
-cpRespond(true, "Saved.", ["commands" => count($cfg['commands'])]);
+// Push the new config to the relay right now so changes (location gating,
+// commands, cooldowns, widget style) take effect immediately - no CrowdPlay
+// Stop/Start needed to re-register. Best effort: a relay hiccup never blocks
+// the local save; the reported flag just drives the UI message. The long-poll
+// daemon (cp_poll.sh) also re-registers on its next start as a backstop.
+$relaySync = "skipped";
+$regScript = __DIR__ . "/../scripts/cp_register.sh";
+if (is_file($regScript)) {
+  $out = @shell_exec("timeout 18 /bin/bash " . escapeshellarg($regScript) . " 2>&1");
+  $relaySync = (is_string($out) && strpos($out, "REGISTER_OK") !== false) ? "ok" : "failed";
+}
+
+cpRespond(true, "Saved.", ["commands" => count($cfg['commands']), "relaySync" => $relaySync]);

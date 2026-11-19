@@ -236,9 +236,10 @@ if ($cpVersion === '') {
           <input type="text" id="locLat" name="locLat" value="<?= $h($loc['lat'] ?? '') ?>"></div>
         <div style="flex:1 1 150px"><label class="cp-lab">Longitude</label>
           <input type="text" id="locLon" name="locLon" value="<?= $h($loc['lon'] ?? '') ?>"></div>
+        <button type="button" class="cp-btn ghost" onclick="cpUseFppLocation()">Use FPP's location</button>
         <button type="button" class="cp-btn ghost" onclick="cpUseMyLocation()">Use my location</button>
       </div>
-      <p class="cp-sub" style="margin-top:6px">&ldquo;Use my location&rdquo; needs an HTTPS page, so it may be blocked here on FPP's HTTP page &mdash; you can <a href="https://www.google.com/maps" target="_blank" rel="noopener">look up your coordinates</a> (right-click your spot in Google Maps) and type them in.</p>
+      <p class="cp-sub" style="margin-top:6px">&ldquo;Use FPP's location&rdquo; pulls the coordinates FPP already has in <strong>Settings &rarr; Localization</strong> (works here on FPP's HTTP page). &ldquo;Use my location&rdquo; reads this device's GPS but needs an HTTPS page. You can also <a href="https://www.google.com/maps" target="_blank" rel="noopener">look up your coordinates</a> (right-click your spot in Google Maps) and type them in.</p>
       <div class="cp-grid2" style="margin-top:4px">
         <div><label class="cp-lab">Allowed radius (m)</label>
           <input type="number" id="locRadius" name="locRadius" min="0" value="<?= $h($loc['radiusM'] ?? 300) ?>"></div>
@@ -424,7 +425,10 @@ async function cpSave(){
   try{
     const res=await fetch(cpUrl('save.php'),{method:'POST',body:fd,cache:'no-store'});
     const d=await res.json();
-    if(d.status==='OK'){ msg('Saved ✓ ('+(d.commands??0)+' commands) — re-run Start to re-register.');
+    if(d.status==='OK'){
+      if(d.relaySync==='ok') msg('Saved ✓ ('+(d.commands??0)+' commands) — pushed to the relay, changes are live.');
+      else if(d.relaySync==='failed') msg('Saved ✓ ('+(d.commands??0)+' commands), but couldn’t reach the relay — run CrowdPlay → Start to sync.', true);
+      else msg('Saved ✓ ('+(d.commands??0)+' commands).');
       cpUpdateEmbed(); cpRefreshStatus(); }
     else msg(d.message||'Save failed', true);
   }catch(e){ msg('Network error saving', true); }
@@ -479,6 +483,42 @@ function cpUseMyLocation(){
     },
     {enableHighAccuracy:true,timeout:10000});
 }
+
+// Pull the show's coordinates from FPP Settings > Localization. The plugin page
+// is served BY FPP, so these requests are same-origin and work over plain HTTP
+// (unlike browser geolocation). FPP returns {name,value,...}; lat/lon are .value.
+function cpFetchFppLatLon(){
+  return Promise.all([
+    fetch('/api/settings/Latitude',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch('/api/settings/Longitude',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+  ]).then(function(a){
+    var lat=parseFloat(a[0]&&a[0].value), lon=parseFloat(a[1]&&a[1].value);
+    if(!isFinite(lat)||!isFinite(lon)||(lat===0&&lon===0)) return null;
+    return {lat:lat, lon:lon};
+  });
+}
+function cpUseFppLocation(){
+  msg('Reading FPP location…');
+  cpFetchFppLatLon().then(function(c){
+    if(!c){ msg('Could not read FPP’s location. Set it in FPP Settings → Localization, or enter coordinates by hand.', true); return; }
+    document.getElementById('locLat').value=c.lat.toFixed(6);
+    document.getElementById('locLon').value=c.lon.toFixed(6);
+    msg('Filled from FPP Settings → Localization ✓');
+  });
+}
+// On load, if the show has no coordinates yet, seed them from FPP's Localization
+// so the gate is centered correctly without the owner hunting for lat/lon. Only
+// fills empty fields - never overwrites coordinates the owner already entered.
+(function(){
+  var la=document.getElementById('locLat'), lo=document.getElementById('locLon');
+  if(la&&lo&&!la.value.trim()&&!lo.value.trim()){
+    cpFetchFppLatLon().then(function(c){
+      if(c&&!la.value.trim()&&!lo.value.trim()){
+        la.value=c.lat.toFixed(6); lo.value=c.lon.toFixed(6);
+      }
+    });
+  }
+})();
 
 function cpEmbedBase(){ return document.getElementById('relayUrl').value.trim().replace(/\/+$/,''); }
 // Mirror save.php's id derivation so the embed's cmd id matches what the relay

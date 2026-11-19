@@ -75,8 +75,21 @@ cp_relay_register() {
         -H 'Content-Type: application/json' -H "X-CrowdPlay-Key: ${skey}" \
         -d "$payload" 2>/dev/null)"
     cp_log "register: -> ${resp:-<no response>}"
+    # Report whether the relay actually accepted the config, so callers (e.g.
+    # save.php) can tell the user the settings synced vs. need a retry. The
+    # long-poll daemon tolerates a non-zero return and keeps polling regardless.
+    if [[ -z "$resp" ]]; then
+        cp_log "register: no response from relay ${relay} (unreachable?)"
+        return 1
+    fi
     case "$resp" in
-        *show-taken*) cp_log "register: SHOW ID TAKEN - another player already claimed '${show}'. Pick a different Show name in the CrowdPlay settings." ;;
+        *show-taken*)
+            cp_log "register: SHOW ID TAKEN - another player already claimed '${show}'. Pick a different Show name in the CrowdPlay settings."
+            return 1 ;;
+    esac
+    case "$resp" in
+        *'"ok":true'*|*'"ok": true'*) return 0 ;;
+        *) cp_log "register: relay rejected the config"; return 1 ;;
     esac
 }
 
