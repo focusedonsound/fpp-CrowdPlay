@@ -289,6 +289,7 @@ $upgradeUrl = $cfg['upgradeUrl'] ?? '';
       <button type="button" class="cp-btn ghost" onclick="cpStop()">Stop now</button>
       <span id="cpMsg"></span>
     </div>
+    <p class="cp-sub" style="margin:8px 2px 0; font-size:12.5px"><b>Start now</b> works immediately. To have CrowdPlay start automatically before your show, add the <b>CrowdPlay&nbsp;-&nbsp;Start</b> command to your schedule &mdash; that command becomes available after you restart FPPD once (FPP shows a &ldquo;restart&rdquo; banner right after installing the plugin).</p>
   </form>
 </div>
 
@@ -504,7 +505,7 @@ const CP_TOUR_STEPS = [
   { selector:'#cpCardStats', title:'6. See what lands',
     text:'Watch how many times each control gets pressed — live counts from the relay. Handy for spotting the crowd favorites.' },
   { selector:'.cp-actions', title:'7. Go live',
-    text:'Save, then press Start now — or schedule the “CrowdPlay - Start” command before your show. That’s it: the show is in their hands.' }
+    text:'Save, then press Start now to go live immediately — your controls light up in the widget within seconds. To schedule CrowdPlay to start automatically before your show, restart FPPD once (FPP shows a “restart” banner right after you install the plugin) so the “CrowdPlay - Start” command is available to the scheduler. That’s it — the show is in their hands.' }
 ];
 let cpTourIndex = -1, cpTourReposition = null;
 function cpTourBuild(){
