@@ -351,12 +351,35 @@ async function cpSave(){
   }catch(e){ msg('Network error saving', true); }
 }
 
-async function cpCommand(name){
-  try{ const r=await fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({command:name,args:[]}),cache:'no-store'}); return r.ok; }catch(e){ return false; }
+// Whether the "CrowdPlay - Start" FPP Command is registered yet (set by
+// cpLoadFppCommands from /api/commands). null = unknown, false = not registered
+// (needs an fppd restart before it can be SCHEDULED - the buttons below work
+// either way because they run the start/stop scripts directly, not via fppd).
+let cpStartCmdRegistered = null;
+
+async function cpPluginAction(file){
+  try{
+    const r = await fetch(cpUrl(file), {method:'POST', cache:'no-store'});
+    return await r.json();
+  }catch(e){ return { ok:false, message:'request failed — is FPPD running?' }; }
 }
-async function cpStart(){ msg((await cpCommand('CrowdPlay - Start')) ? 'Start sent ✓' : 'Start failed', false); }
-async function cpStop(){ msg((await cpCommand('CrowdPlay - Stop')) ? 'Stop sent ✓' : 'Stop failed', false); }
+async function cpStart(){
+  const d = await cpPluginAction('start.php');
+  if(d && d.ok){
+    let m = 'Started ✓ — ' + (d.message || 'running.');
+    if(cpStartCmdRegistered === false){
+      m += '  Tip: to schedule a start before your show, restart FPPD once so the “CrowdPlay - Start” command registers.';
+    }
+    msg(m, false);
+    cpRefreshStatus();
+  } else {
+    msg('Start failed: ' + ((d && d.message) || 'unknown error'), true);
+  }
+}
+async function cpStop(){
+  const d = await cpPluginAction('stop.php');
+  msg((d && d.ok) ? 'Stopped ✓' : ('Stop failed: ' + ((d && d.message) || 'unknown error')), !(d && d.ok));
+}
 
 function cpUseMyLocation(){
   if(!navigator.geolocation){ msg('This browser has no geolocation.', true); return; }
@@ -424,8 +447,10 @@ async function cpLoadFppCommands(){
     const res=await fetch('/api/commands',{cache:'no-store'});
     const list=await res.json();
     const dl=document.getElementById('cpFppCommands');
+    const names=[];
     (Array.isArray(list)?list:[]).forEach(c=>{ const name=(typeof c==='string')?c:(c&&c.name);
-      if(name){ const o=document.createElement('option'); o.value=name; dl.appendChild(o); } });
+      if(name){ names.push(name); const o=document.createElement('option'); o.value=name; dl.appendChild(o); } });
+    cpStartCmdRegistered = names.includes('CrowdPlay - Start');
   }catch(e){}
 }
 

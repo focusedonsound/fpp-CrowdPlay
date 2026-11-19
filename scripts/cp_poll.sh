@@ -1,13 +1,10 @@
 #!/bin/bash
 # CrowdPlay outbound poll daemon.
 #
-# Holds an outbound long-poll to the relay, receives queued command ids,
-# and dispatches each to cp_exec.sh (which enforces the local allowlist).
-# The player never accepts an inbound connection.
-#
-# NOTE: the relay API contract is not finalized yet - the request/response
-# shape below is a placeholder marked TODO(relay). The local half (config,
-# allowlist enforcement, execution, backoff, clean shutdown) is real.
+# On startup it registers this show's command catalog + location config with the
+# relay (cp_relay_register), then holds an outbound long-poll to /api/poll,
+# receives queued command ids, and dispatches each to cp_exec.sh (which re-checks
+# the local allowlist). The player never accepts an inbound connection.
 set -uo pipefail
 
 PLUGIN_DIR="$(dirname "$(dirname "$0")")"
