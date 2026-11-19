@@ -68,7 +68,8 @@ if ($cpVersion === '') {
   #cpWrap .cp-tag{margin:3px 0 0; opacity:.9; font-size:14px}
   #cpWrap .cp-status{margin-left:auto; display:flex; align-items:center; gap:8px;
     background:rgba(255,255,255,.15); padding:7px 12px; border-radius:999px; font-size:13px; font-weight:600}
-  #cpWrap .cp-dot{width:9px; height:9px; border-radius:50%; background:#ffd66b; box-shadow:0 0 0 4px rgba(255,214,107,.25)}
+  /* RAG status dot: green = ready (relay configured), red = not configured. */
+  #cpWrap .cp-dot{width:9px; height:9px; border-radius:50%; background:#3ad07a; box-shadow:0 0 0 4px rgba(58,208,122,.28)}
   #cpWrap .cp-dot.off{background:#ff8f9c; box-shadow:0 0 0 4px rgba(255,143,156,.2)}
 
   /* cards */
