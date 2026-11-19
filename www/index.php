@@ -255,7 +255,6 @@ if ($cpGitVer !== '') {
           <tbody id="cpCmdBody"></tbody>
         </table>
       </div>
-      <datalist id="cpFppCommands"></datalist>
       <button type="button" class="cp-add" onclick="cpAddRow()">+ Add command</button>
       <p class="cp-sub" style="margin:10px 0 0">Without a license key, a show can expose up to <b>3</b> controls and take <b>30</b> presses per hour (shared across all controls). A license key raises both limits.</p>
     </section>
@@ -312,12 +311,35 @@ const cpUrl = (p) => 'plugin.php?plugin=' + CP_PLUGIN + '&nopage=1&page=www/' + 
 const EXISTING = <?= json_encode($commands ?: [], JSON_UNESCAPED_SLASHES) ?>;
 function msg(t, err){ const m=document.getElementById('cpMsg'); m.textContent=t; m.style.color = err ? 'var(--cp-bad)' : 'var(--cp-good)'; }
 
+// FPP command names for the per-row dropdown, loaded from /api/commands.
+let cpFppCmdNames = [];
+// Populate a row's FPP-command <select> with the known commands, keeping the
+// selected value even if commands haven't loaded yet or FPP no longer lists it
+// (e.g. a command that needs an fppd restart, or one removed since you saved).
+function cpFillCmdSelect(sel, selected){
+  const want = (selected != null && selected !== '') ? selected : (sel.value || sel.dataset.value || '');
+  const names = cpFppCmdNames.slice();
+  if(want && !names.includes(want)) names.push(want);
+  names.sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML = '';
+  const ph=document.createElement('option'); ph.value=''; ph.textContent='— choose an FPP command —'; sel.appendChild(ph);
+  names.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  sel.value = want || '';
+  sel.dataset.value = sel.value;
+  sel.onchange = () => { sel.dataset.value = sel.value; };
+}
+// Re-populate every row's command dropdown once the command list is in,
+// preserving each row's current choice.
+function cpRefreshCmdSelects(){
+  document.querySelectorAll('#cpCmdBody .f-cmd').forEach(sel => cpFillCmdSelect(sel, sel.value || sel.dataset.value || ''));
+}
+
 function cpRow(c = {}) {
   const tr = document.createElement('tr');
   const cell = (html) => { const td = document.createElement('td'); td.innerHTML = html; return td; };
   tr.appendChild(cell('<input type="text" class="f-label">'));
   tr.appendChild(cell('<input type="text" class="f-id">'));
-  tr.appendChild(cell('<input type="text" class="f-cmd" list="cpFppCommands">'));
+  tr.appendChild(cell('<select class="f-cmd"></select>'));
   tr.appendChild(cell('<input type="text" class="f-args" placeholder="[]">'));
   tr.appendChild(cell('<select class="f-mode"><option value="overlay">overlay</option><option value="interrupt">interrupt</option></select>'));
   tr.appendChild(cell('<input type="text" class="f-lane" value="default">'));
@@ -327,7 +349,7 @@ function cpRow(c = {}) {
   tr.appendChild(cell('<button type="button" class="cp-rm" title="Remove" onclick="this.closest(\'tr\').remove()">&times;</button>'));
   tr.querySelector('.f-label').value = c.label || '';
   tr.querySelector('.f-id').value = c.id || '';
-  tr.querySelector('.f-cmd').value = c.fppCommand || '';
+  cpFillCmdSelect(tr.querySelector('.f-cmd'), c.fppCommand || '');
   tr.querySelector('.f-args').value = c.args ? JSON.stringify(c.args) : '';
   tr.querySelector('.f-mode').value = (c.mode === 'interrupt') ? 'interrupt' : 'overlay';
   tr.querySelector('.f-lane').value = c.lane || 'default';
@@ -460,11 +482,12 @@ async function cpLoadFppCommands(){
   try{
     const res=await fetch('/api/commands',{cache:'no-store'});
     const list=await res.json();
-    const dl=document.getElementById('cpFppCommands');
     const names=[];
     (Array.isArray(list)?list:[]).forEach(c=>{ const name=(typeof c==='string')?c:(c&&c.name);
-      if(name){ names.push(name); const o=document.createElement('option'); o.value=name; dl.appendChild(o); } });
+      if(name) names.push(name); });
+    cpFppCmdNames = names;
     cpStartCmdRegistered = names.includes('CrowdPlay - Start');
+    cpRefreshCmdSelects();
   }catch(e){}
 }
 
