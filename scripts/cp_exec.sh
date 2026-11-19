@@ -25,13 +25,32 @@ if [[ -z "$ENTRY" ]]; then
     exit 1
 fi
 
-FPP_COMMAND="$(jq -r '.fppCommand' <<<"$ENTRY")"
-ARGS_JSON="$(jq -c '.args // []' <<<"$ENTRY")"
+API="$(cp_local_fpp_api)"
+
+# Resolve what to run. A control can either name a raw FPP command (+args) or a
+# saved FPP Command Preset. For a preset we look up its command+args from FPP's
+# own commandPresets.json at run time (so edits to the preset are followed) and
+# run those - there is no separate "run preset" FPP command.
+PRESET="$(jq -r '.preset // empty' <<<"$ENTRY")"
+if [[ -n "$PRESET" ]]; then
+    PRESET_URL="${API%/command}/configfile/commandPresets.json"
+    PRESETS="$(curl -sS --max-time 10 "$PRESET_URL" 2>/dev/null)"
+    PRESET_ENTRY="$(jq -c --arg n "$PRESET" 'first(.commands[]? | select(.name == $n)) // empty' <<<"$PRESETS" 2>/dev/null)"
+    if [[ -z "$PRESET_ENTRY" ]]; then
+        cp_log "exec: id='$CMD_ID' DENY - preset '$PRESET' not found in commandPresets.json"
+        exit 1
+    fi
+    FPP_COMMAND="$(jq -r '.command // empty' <<<"$PRESET_ENTRY")"
+    ARGS_JSON="$(jq -c '.args // []' <<<"$PRESET_ENTRY")"
+    cp_log "exec: id='$CMD_ID' preset='$PRESET' resolves to cmd='$FPP_COMMAND'"
+else
+    FPP_COMMAND="$(jq -r '.fppCommand' <<<"$ENTRY")"
+    ARGS_JSON="$(jq -c '.args // []' <<<"$ENTRY")"
+fi
 
 # Build the FPP command payload: {"command": <name>, "args": [ ... ]}
 PAYLOAD="$(jq -cn --arg c "$FPP_COMMAND" --argjson a "$ARGS_JSON" '{command:$c, args:$a}')"
 
-API="$(cp_local_fpp_api)"
 RESP="$(curl -sS --max-time 10 -X POST "$API" -H 'Content-Type: application/json' -d "$PAYLOAD" 2>/dev/null)"
 RC=$?
 if [[ $RC -ne 0 ]]; then

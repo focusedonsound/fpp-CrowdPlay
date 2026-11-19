@@ -105,27 +105,37 @@ if (isset($_POST['commandsJson'])) {
     if (isset($seen[$id])) cpRespond(false, "Duplicate command id: '$id'.");
     $seen[$id] = true;
 
+    // A control runs EITHER a saved FPP Command Preset (by name) or a raw
+    // FPP command + args. A preset carries its own args, so none are needed.
+    $preset     = cpClean(trim($c['preset'] ?? ''));
     $fppCommand = cpClean(trim($c['fppCommand'] ?? ''));
-    if ($fppCommand === '') cpRespond(false, "Command '$id' has no FPP command selected.");
+    if ($preset === '' && $fppCommand === '')
+      cpRespond(false, "Command '$id' has no FPP command or preset selected.");
 
-    // Args: accept an array, or a JSON-array string typed in the UI.
+    // Args: accept an array, or a JSON-array string typed in the UI. Only a
+    // raw command uses them - a preset carries its own.
     $args = $c['args'] ?? [];
-    if (is_string($args)) {
-      $args = trim($args);
-      if ($args === '') $args = [];
-      else {
-        $decoded = json_decode($args, true);
-        if (!is_array($decoded)) cpRespond(false, "Command '$id' args must be a JSON array, e.g. [\"wave.fseq\", false, true, true].");
-        $args = $decoded;
+    if ($preset !== '') {
+      $args = [];
+    } else {
+      if (is_string($args)) {
+        $args = trim($args);
+        if ($args === '') $args = [];
+        else {
+          $decoded = json_decode($args, true);
+          if (!is_array($decoded)) cpRespond(false, "Command '$id' args must be a JSON array, e.g. [\"wave.fseq\", false, true, true].");
+          $args = $decoded;
+        }
       }
+      if (!is_array($args)) $args = [];
     }
-    if (!is_array($args)) $args = [];
 
     $mode = (($c['mode'] ?? 'overlay') === 'interrupt') ? 'interrupt' : 'overlay';
 
     $clean[] = [
       "id"          => $id,
       "label"       => cpClean(trim($c['label'] ?? $id)),
+      "preset"      => $preset,
       "fppCommand"  => $fppCommand,
       "args"        => $args,
       "mode"        => $mode,

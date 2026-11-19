@@ -89,6 +89,14 @@ if ($cpGitVer !== '') {
   }
   #cpWrap input:focus,#cpWrap select:focus{border-color:var(--cp-brand); box-shadow:0 0 0 3px rgba(109,91,255,.18)}
   #cpWrap input[type=color]{width:100%; height:42px; padding:4px; cursor:pointer}
+  /* Make every dropdown clearly a dropdown: force a visible caret even when a
+     parent theme strips the native one. */
+  #cpWrap select{
+    -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%238a90a0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.75 6 6.5 11 1.75'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 11px center; background-size:12px 8px;
+    padding-right:30px; cursor:pointer;
+  }
   #cpWrap .cp-badge{display:inline-block; font-weight:700; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:linear-gradient(120deg,var(--cp-brand),var(--cp-brand2)); padding:2px 8px; border-radius:999px; vertical-align:middle; margin-left:6px}
   #cpWrap .cp-ver{font-size:12px; font-weight:600; color:var(--cp-muted); vertical-align:middle; margin-left:8px; letter-spacing:.02em}
   #cpWrap table.cp-stats{width:100%; border-collapse:collapse; font-size:13px}
@@ -245,11 +253,11 @@ if ($cpGitVer !== '') {
     <!-- Commands -->
     <section class="cp-card" id="cpCardCmd">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 9h6M7 13h10"/></svg>Exposed commands</h2>
-      <p class="cp-sub">Only commands you add here can be triggered. The raw FPP command and its arguments stay on this player &mdash; the relay only learns the label, lane, cooldown and duration.</p>
+      <p class="cp-sub">Only commands you add here can be triggered. For each one, pick a <b>Command Preset</b> you built in FPP (Content&nbsp;Setup&nbsp;&rarr;&nbsp;Command&nbsp;Presets &mdash; easiest, no JSON) or a raw FPP command with its arguments. What you pick stays on this player &mdash; the relay only learns the label, lane, cooldown and duration.</p>
       <div class="cp-tablewrap">
         <table class="cp-tbl">
           <thead><tr>
-            <th>Label</th><th>ID</th><th>FPP command</th><th>Args (JSON)</th>
+            <th>Label</th><th>ID</th><th>Preset / command</th><th>Args (JSON)</th>
             <th>Mode</th><th>Lane</th><th>Cooldown&nbsp;(s)</th><th>Duration&nbsp;(s)</th><th>Public</th><th></th>
           </tr></thead>
           <tbody id="cpCmdBody"></tbody>
@@ -311,25 +319,52 @@ const cpUrl = (p) => 'plugin.php?plugin=' + CP_PLUGIN + '&nopage=1&page=www/' + 
 const EXISTING = <?= json_encode($commands ?: [], JSON_UNESCAPED_SLASHES) ?>;
 function msg(t, err){ const m=document.getElementById('cpMsg'); m.textContent=t; m.style.color = err ? 'var(--cp-bad)' : 'var(--cp-good)'; }
 
-// FPP command names for the per-row dropdown, loaded from /api/commands.
+// A control runs either a saved FPP Command Preset (easiest - you build it in
+// FPP with dropdowns, no JSON) or a raw FPP command + args. Both lists are
+// loaded from FPP: presets from /api/configfile/commandPresets.json, commands
+// from /api/commands. An option's value is "preset:<name>" or "cmd:<name>".
 let cpFppCmdNames = [];
-// Populate a row's FPP-command <select> with the known commands, keeping the
-// selected value even if commands haven't loaded yet or FPP no longer lists it
-// (e.g. a command that needs an fppd restart, or one removed since you saved).
+let cpFppPresets  = [];
+function cpMkOpt(type, name){
+  const o=document.createElement('option');
+  o.value=type+':'+name; o.dataset.type=type; o.dataset.name=name; o.textContent=name;
+  return o;
+}
+// Show the Args box only for a raw command; a preset carries its own args.
+function cpSyncArgsVisibility(sel){
+  const tr=sel.closest('tr'); if(!tr) return;
+  const args=tr.querySelector('.f-args'); if(!args) return;
+  const opt=sel.selectedOptions && sel.selectedOptions[0];
+  const isPreset = opt && opt.dataset.type==='preset';
+  args.disabled = !!isPreset;
+  args.placeholder = isPreset ? 'uses the preset' : '[]';
+  args.style.opacity = isPreset ? '0.45' : '';
+  if(isPreset) args.value='';
+}
+// Build a row's dropdown (grouped presets + commands), keeping the saved value
+// even if the lists haven't loaded yet or FPP no longer lists it.
 function cpFillCmdSelect(sel, selected){
   const want = (selected != null && selected !== '') ? selected : (sel.value || sel.dataset.value || '');
-  const names = cpFppCmdNames.slice();
-  if(want && !names.includes(want)) names.push(want);
-  names.sort((a,b)=>a.localeCompare(b));
   sel.innerHTML = '';
-  const ph=document.createElement('option'); ph.value=''; ph.textContent='— choose an FPP command —'; sel.appendChild(ph);
-  names.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  const ph=document.createElement('option'); ph.value=''; ph.textContent='— choose a command —'; sel.appendChild(ph);
+  if(cpFppPresets.length){
+    const g=document.createElement('optgroup'); g.label='Command Presets';
+    cpFppPresets.slice().sort((a,b)=>a.localeCompare(b)).forEach(n=>g.appendChild(cpMkOpt('preset',n)));
+    sel.appendChild(g);
+  }
+  const g2=document.createElement('optgroup'); g2.label = cpFppPresets.length ? 'FPP Commands (advanced)' : 'FPP Commands';
+  cpFppCmdNames.slice().sort((a,b)=>a.localeCompare(b)).forEach(n=>g2.appendChild(cpMkOpt('cmd',n)));
+  sel.appendChild(g2);
   sel.value = want || '';
+  if((want||'') && sel.value !== want){            // saved value not in the lists - keep it anyway
+    const i=want.indexOf(':'); const type=want.slice(0,i)==='preset'?'preset':'cmd'; const name=want.slice(i+1);
+    sel.appendChild(cpMkOpt(type, name)); sel.value=want;
+  }
   sel.dataset.value = sel.value;
-  sel.onchange = () => { sel.dataset.value = sel.value; };
+  cpSyncArgsVisibility(sel);
+  sel.onchange = () => { sel.dataset.value = sel.value; cpSyncArgsVisibility(sel); };
 }
-// Re-populate every row's command dropdown once the command list is in,
-// preserving each row's current choice.
+// Re-populate every row's dropdown once a list arrives, preserving each choice.
 function cpRefreshCmdSelects(){
   document.querySelectorAll('#cpCmdBody .f-cmd').forEach(sel => cpFillCmdSelect(sel, sel.value || sel.dataset.value || ''));
 }
@@ -349,8 +384,9 @@ function cpRow(c = {}) {
   tr.appendChild(cell('<button type="button" class="cp-rm" title="Remove" onclick="this.closest(\'tr\').remove()">&times;</button>'));
   tr.querySelector('.f-label').value = c.label || '';
   tr.querySelector('.f-id').value = c.id || '';
-  cpFillCmdSelect(tr.querySelector('.f-cmd'), c.fppCommand || '');
-  tr.querySelector('.f-args').value = c.args ? JSON.stringify(c.args) : '';
+  tr.querySelector('.f-args').value = (c.args && c.args.length) ? JSON.stringify(c.args) : '';
+  cpFillCmdSelect(tr.querySelector('.f-cmd'),
+    c.preset ? ('preset:'+c.preset) : (c.fppCommand ? ('cmd:'+c.fppCommand) : ''));
   tr.querySelector('.f-mode').value = (c.mode === 'interrupt') ? 'interrupt' : 'overlay';
   tr.querySelector('.f-lane').value = c.lane || 'default';
   tr.querySelector('.f-cool').value = c.cooldownSec || 0;
@@ -364,12 +400,17 @@ function cpCollect(){
   const rows=[];
   document.querySelectorAll('#cpCmdBody tr').forEach(tr=>{
     const v=(s)=>tr.querySelector(s);
-    const label=v('.f-label').value.trim(), cmd=v('.f-cmd').value.trim();
-    if(!label && !cmd) return;
-    rows.push({ id:v('.f-id').value.trim(), label, fppCommand:cmd, args:v('.f-args').value.trim(),
+    const label=v('.f-label').value.trim();
+    const sel=v('.f-cmd'); const opt=sel.selectedOptions && sel.selectedOptions[0];
+    const type=opt?opt.dataset.type:''; const name=opt?(opt.dataset.name||''):'';
+    if(!label && !name) return;
+    const row={ id:v('.f-id').value.trim(), label,
       mode:v('.f-mode').value, lane:v('.f-lane').value.trim()||'default',
       cooldownSec:parseInt(v('.f-cool').value||'0',10), durationSec:parseInt(v('.f-dur').value||'0',10),
-      publicSafe:v('.f-pub').checked });
+      publicSafe:v('.f-pub').checked };
+    if(type==='preset'){ row.preset=name; row.fppCommand=''; row.args=''; }
+    else { row.preset=''; row.fppCommand=name; row.args=v('.f-args').value.trim(); }
+    rows.push(row);
   });
   return rows;
 }
@@ -491,6 +532,18 @@ async function cpLoadFppCommands(){
   }catch(e){}
 }
 
+// Saved FPP Command Presets (build them in FPP with dropdowns, then pick one
+// here - no JSON). Loaded from FPP's commandPresets.json.
+async function cpLoadPresets(){
+  try{
+    const res=await fetch('/api/configfile/commandPresets.json',{cache:'no-store'});
+    const data=await res.json();
+    const cmds=(data && Array.isArray(data.commands)) ? data.commands : [];
+    cpFppPresets = cmds.map(p=>p && p.name).filter(Boolean);
+    cpRefreshCmdSelects();
+  }catch(e){}
+}
+
 function cpEsc(s){ const d=document.createElement('div'); d.textContent=(s==null?'':s); return d.innerHTML; }
 async function cpLoadStats(){
   const el=document.getElementById('cpStats'); el.textContent='Loading…';
@@ -516,6 +569,7 @@ async function cpLoadStats(){
 
 (EXISTING.length ? EXISTING : [{}]).forEach(cpAddRow);
 cpLoadFppCommands();
+cpLoadPresets();
 cpUpdateEmbed();
 cpLoadStats();
 // Relay URL is fixed (hosted for everyone) - only the show name affects the embed.
