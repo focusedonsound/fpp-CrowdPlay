@@ -25,16 +25,18 @@ $tourEnabled = ($ui['onboardingTourEnabled'] ?? true);
 // so nothing ships pointing at a purchase page. Set it in config if you want a link.
 $upgradeUrl = $cfg['upgradeUrl'] ?? '';
 
-// Plugin version shown in the page header. Prefer the git tag of this installed
-// checkout (FPP installs plugins as git clones), and fall back to the committed
-// VERSION file if git isn't available.
+// Plugin version shown in the page header. Prefer the committed VERSION file
+// (always correct for a release checkout, and works even when PHP's shell_exec
+// is disabled or git tags weren't fetched); fall back to the git tag.
 $cpVersion = '';
 $cpRoot = dirname(__DIR__);
-$cpGitVer = @trim((string)@shell_exec('git -C ' . escapeshellarg($cpRoot) . ' describe --tags --abbrev=0 2>/dev/null'));
-if ($cpGitVer !== '') {
-    $cpVersion = $cpGitVer;
-} elseif (is_file($cpRoot . '/VERSION')) {
-    $cpVersion = 'v' . ltrim(trim((string)@file_get_contents($cpRoot . '/VERSION')), 'v');
+if (is_file($cpRoot . '/VERSION')) {
+    $v = trim((string)@file_get_contents($cpRoot . '/VERSION'));
+    if ($v !== '') $cpVersion = 'v' . ltrim($v, 'v');
+}
+if ($cpVersion === '') {
+    $g = @trim((string)@shell_exec('git -C ' . escapeshellarg($cpRoot) . ' describe --tags --abbrev=0 2>/dev/null'));
+    if ($g !== '') $cpVersion = $g;
 }
 ?>
 <style>
@@ -98,7 +100,7 @@ if ($cpGitVer !== '') {
     padding-right:30px; cursor:pointer;
   }
   #cpWrap .cp-badge{display:inline-block; font-weight:700; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:linear-gradient(120deg,var(--cp-brand),var(--cp-brand2)); padding:2px 8px; border-radius:999px; vertical-align:middle; margin-left:6px}
-  #cpWrap .cp-ver{font-size:12px; font-weight:600; color:var(--cp-muted); vertical-align:middle; margin-left:8px; letter-spacing:.02em}
+  #cpWrap .cp-ver{display:inline-block; font-size:11.5px; font-weight:700; color:#fff; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.28); padding:1px 8px; border-radius:999px; vertical-align:middle; margin-left:8px; letter-spacing:.02em}
   #cpWrap table.cp-stats{width:100%; border-collapse:collapse; font-size:13px}
   #cpWrap table.cp-stats th{text-align:left; color:var(--cp-muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; padding:6px 8px; border-bottom:1px solid var(--cp-line)}
   #cpWrap table.cp-stats td{padding:7px 8px; border-bottom:1px solid var(--cp-line)}
