@@ -37,6 +37,7 @@ function cpDefaultConfig() {
     "commands" => [],
     "location" => ["enabled" => false, "lat" => null, "lon" => null,
                    "radiusM" => 300, "toleranceM" => 50, "onDenied" => "strict"],
+    "turnstileRequired" => false,
     "widget" => ["buttonColor" => "", "textColor" => "", "headline" => ""],
     "ui" => ["onboardingSeen" => false, "onboardingTourEnabled" => true],
   ];
@@ -74,6 +75,9 @@ if (isset($_POST['locRadius']))    $cfg['location']['radiusM']    = max(0, (int)
 if (isset($_POST['locTolerance'])) $cfg['location']['toleranceM'] = max(0, (int)$_POST['locTolerance']);
 if (isset($_POST['locOnDenied']))
   $cfg['location']['onDenied'] = ($_POST['locOnDenied'] === 'lenient') ? 'lenient' : 'strict';
+
+// ---- Bot protection (human check) ----
+$cfg['turnstileRequired'] = !empty($_POST['tsRequired']);
 
 // ---- Widget appearance (premium; relay ignores it on the free tier) ----
 // Validate here too so the stored config stays clean even before the relay

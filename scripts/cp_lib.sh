@@ -55,6 +55,7 @@ cp_relay_register() {
         '{show: $show,
           licenseKey: $lic,
           location: (.location // null),
+          turnstileRequired: (.turnstileRequired // false),
           style: (.widget // null),
           commands: [ .commands[]? | {
               id: .id,

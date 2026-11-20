@@ -254,6 +254,13 @@ if ($cpVersion === '') {
       </select>
     </section>
 
+    <!-- Bot protection -->
+    <section class="cp-card" id="cpCardBot">
+      <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Bot protection</h2>
+      <p class="cp-sub">Add a Cloudflare &ldquo;confirm you&rsquo;re human&rdquo; check before a press goes through. <strong>Off by default</strong> &mdash; the relay already rate-limits every press (cooldown, per-visitor burst limit, hourly cap, duplicate-press guard), so most shows don&rsquo;t need this. Turning it on can occasionally show a challenge, and some phone browsers struggle with it inside an embedded page, so leave it off unless you&rsquo;re seeing abuse.</p>
+      <label class="cp-switch"><input type="checkbox" id="tsRequired" name="tsRequired" <?= !empty($cfg['turnstileRequired']) ? 'checked' : '' ?>> Require a human check (Turnstile)</label>
+    </section>
+
     <!-- Commands -->
     <section class="cp-card" id="cpCardCmd">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 9h6M7 13h10"/></svg>Exposed commands</h2>
@@ -422,6 +429,7 @@ function cpCollect(){
 async function cpSave(){
   const fd=new FormData(document.getElementById('cpForm'));
   fd.set('locEnabled', document.getElementById('locEnabled').checked ? '1' : '');
+  fd.set('tsRequired', document.getElementById('tsRequired').checked ? '1' : '');
   fd.set('commandsJson', JSON.stringify(cpCollect()));
   try{
     const res=await fetch(cpUrl('save.php'),{method:'POST',body:fd,cache:'no-store'});
