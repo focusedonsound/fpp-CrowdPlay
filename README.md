@@ -11,6 +11,11 @@
 
 ---
 
+> [!IMPORTANT]
+> **📣 CrowdPlay isn't in the FPP Plugin Manager list _yet_.** It's pending listing in the official FPP plugin directory ([FalconChristmas/fpp-data#313](https://github.com/FalconChristmas/fpp-data/pull/313)). Until that merges, install it **manually from this repo** — it takes about a minute. Jump to **[Installation](#-installation)** for the steps.
+
+---
+
 > **Turn every spectator into part of the show. CrowdPlay lets the people watching your display reach out and *make something happen* — wave a tree, fire a snow machine, launch a finale — from a button you drop onto your own website or your Remote Falcon page. One tap and the magic is in their hands… and your show player never touches the open internet. ⚡**
 
 <p align="center">
@@ -146,11 +151,35 @@ This is the heart of CrowdPlay, so it's worth being explicit:
 
 ## 📦 Installation
 
+> [!NOTE]
+> CrowdPlay is **not in the Plugin Manager's known-plugins list yet** (listing PR [fpp-data#313](https://github.com/FalconChristmas/fpp-data/pull/313) is pending). Install it manually from this repository using the steps below. Once it's listed, it'll appear in the normal plugin list and this manual step won't be needed.
+
+**Manual install (until it's listed):**
+
 1. In FPP, open **Content Setup → Plugin Manager**.
-2. Find **CrowdPlay** in the list and install it (or add this repo URL).
-3. Open the **CrowdPlay** plugin page from the FPP menu.
-4. The first visit auto-generates your **Show name/ID** and a private key, and pre-fills the hosted relay — a fresh install works with zero setup.
-5. Follow the built-in **walkthrough tour**: name your show, add the commands to expose, copy the embed snippet, and click **Start**.
+2. Scroll to the **manual install** field (the "install a plugin not listed above" / GitHub repository box at the bottom of the page).
+3. Enter this repository and click **Install**:
+   ```
+   https://github.com/focusedonsound/fpp-CrowdPlay
+   ```
+   (`focusedonsound/fpp-CrowdPlay` also works.)
+4. When it finishes, open the **CrowdPlay** page from the FPP menu.
+5. The first visit auto-generates your **Show name/ID** and a private key, and pre-fills the hosted relay — a fresh install works with zero setup.
+6. Follow the built-in **walkthrough tour**: name your show, add the commands to expose, copy the embed snippet, and click **Start**.
+
+<details>
+<summary>Alternative: install from the command line</summary>
+
+SSH into your FPP device and clone into the plugins directory:
+
+```bash
+cd /home/fpp/media/plugins
+git clone https://github.com/focusedonsound/fpp-CrowdPlay.git
+/home/fpp/media/plugins/fpp-CrowdPlay/fpp_install.sh
+```
+
+Then restart FPPD (or reboot) so the **CrowdPlay – Start / Stop** commands register.
+</details>
 
 > **Tip:** scheduled **CrowdPlay – Start / Stop** commands register after a one-time FPPD restart. The **Start now / Stop now** buttons on the settings page work immediately, even before that restart.
 
