@@ -20,15 +20,23 @@ CP_KEY_HDR="${CP_STATE_DIR}/showkey.hdr"
 # Write/refresh the key header file and print its path. Idempotent: callers can
 # reuse the returned path for the life of the process without re-creating it.
 cp_keyfile() {
-    local k="$1"
+    local k="$1" tmp
     mkdir -p "$CP_STATE_DIR" 2>/dev/null || return 1
-    ( umask 077; printf 'X-CrowdPlay-Key: %s\n' "$k" > "$CP_KEY_HDR" ) || return 1
-    chmod 600 "$CP_KEY_HDR" 2>/dev/null
+    # Write to a temp file in the SAME dir, then atomically rename it over the
+    # target. A plain `> $CP_KEY_HDR` truncates-then-writes, so a concurrent
+    # reader (another cp_exec.sh worker's `curl -H @file`, or the poll daemon)
+    # could catch the momentarily-empty file and send a blank auth header.
+    # rename(2) within one filesystem is atomic: readers see old or new, never
+    # empty. Temp stays in the state dir so the rename isn't a cross-device copy.
+    tmp="$(mktemp "${CP_KEY_HDR}.XXXXXX" 2>/dev/null)" || return 1
+    ( umask 077; printf 'X-CrowdPlay-Key: %s\n' "$k" > "$tmp" ) || { rm -f "$tmp"; return 1; }
+    chmod 600 "$tmp" 2>/dev/null
+    mv -f "$tmp" "$CP_KEY_HDR" || { rm -f "$tmp"; return 1; }
     printf '%s' "$CP_KEY_HDR"
 }
 
 # Remove the persistent key-header file (called at Stop / uninstall).
-cp_keyfile_cleanup() { rm -f "$CP_KEY_HDR" 2>/dev/null || true; }
+cp_keyfile_cleanup() { rm -f "$CP_KEY_HDR" "${CP_KEY_HDR}".* 2>/dev/null || true; }
 
 cp_ts()  { date '+%Y-%m-%d %H:%M:%S'; }
 cp_log() { echo "[$(cp_ts)] [fpp-CrowdPlay] $*" >> "$CP_LOG_FILE"; }
