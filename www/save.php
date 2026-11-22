@@ -23,7 +23,7 @@ function cpRespond($ok, $msg, $extra = []) {
 
 // Strip CR/LF from any scalar that gets written back out or forwarded to the
 // relay, so a value can never splice a new line into a generated request.
-function cpClean($s) { return str_replace(["\r", "\n"], "", (string)$s); }
+function cpClean($s) { return str_replace(["\r", "\n", "<", ">"], "", (string)$s); }
 
 function cpDefaultConfig() {
   return [

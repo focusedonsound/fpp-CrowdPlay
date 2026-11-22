@@ -37,10 +37,12 @@ while [[ $RUNNING -eq 1 ]]; do
     # (X-CrowdPlay-Key); the relay returns a JSON array like ["wave","snow"],
     # or [] on timeout. A 403 {"error":"show-taken"} means another player
     # claimed this Show ID - handled below.
+    CP_HDR="$(cp_keyfile "$SHOW_KEY")"
     RESP="$(curl -sS --max-time "$((HOLD_SEC + 10))" \
                  -H "X-CrowdPlay-Show: ${SHOW_ID}" \
-                 -H "X-CrowdPlay-Key: ${SHOW_KEY}" \
+                 -H @"$CP_HDR" \
                  "${RELAY_URL%/}/api/poll?show=${SHOW_ID}&hold=${HOLD_SEC}" 2>/dev/null)" || RESP=""
+    rm -f "$CP_HDR"
 
     case "$RESP" in
         *show-taken*)

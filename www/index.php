@@ -211,7 +211,7 @@ if ($cpVersion === '') {
       <label class="cp-lab">Show name <span class="cp-muted">&mdash; appears in your embed link; must be unique</span></label>
       <input type="text" id="showId" name="showId" value="<?= $h($showId) ?>" placeholder="my-show">
       <label class="cp-lab">License key <span class="cp-muted">(optional)</span></label>
-      <input type="text" id="licenseKey" name="licenseKey" value="<?= $h($licenseKey) ?>" placeholder="paste your license key">
+      <input type="password" id="licenseKey" name="licenseKey" autocomplete="off" value="<?= $h($licenseKey) ?>" placeholder="paste your license key">
       <p class="cp-sub" style="margin:6px 0 0; font-size:12.5px">CrowdPlay works without a key. A license key is optional and raises the per-hour and control limits.<?php if ($upgradeUrl !== ''): ?> <a href="<?= $h($upgradeUrl) ?>" target="_blank" rel="noopener">Details</a>.<?php endif; ?></p>
       <!-- Relay URL is hosted for everyone; kept as a hidden field (feeds the embed
            snippet builder and the save path) rather than a self-host setting. -->
@@ -327,7 +327,7 @@ if ($cpVersion === '') {
 <script>
 const CP_PLUGIN = 'fpp-CrowdPlay';
 const cpUrl = (p) => 'plugin.php?plugin=' + CP_PLUGIN + '&nopage=1&page=www/' + p;
-const EXISTING = <?= json_encode($commands ?: [], JSON_UNESCAPED_SLASHES) ?>;
+const EXISTING = <?= json_encode($commands ?: [], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 function msg(t, err){ const m=document.getElementById('cpMsg'); m.textContent=t; m.style.color = err ? 'var(--cp-bad)' : 'var(--cp-good)'; }
 
 // A control runs either a saved FPP Command Preset (easiest - you build it in

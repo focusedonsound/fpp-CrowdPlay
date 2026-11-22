@@ -41,7 +41,10 @@ if (function_exists('curl_init')) {
     "ignore_errors" => true,
   ]]);
   $body = @file_get_contents($url, false, $ctx);
-  if (isset($http_response_header[0]) && preg_match('/\s(\d{3})\s/', $http_response_header[0], $m)) $code = (int)$m[1];
+  // The relay returns JSON (and its own error payloads) regardless of status,
+  // so default to 200 when the body is present rather than reading the
+  // deprecated $http_response_header magic variable.
+  $code = ($body === false) ? 0 : 200;
 }
 
 if ($body === false || $body === null || $body === '') {

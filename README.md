@@ -164,7 +164,7 @@ This is the heart of CrowdPlay, so it's worth being explicit:
    ```
    (`focusedonsound/fpp-CrowdPlay` also works.)
 4. When it finishes, open the **CrowdPlay** page from the FPP menu.
-5. The first visit auto-generates your **Show name/ID** and a private key, and pre-fills the hosted relay — a fresh install works with zero setup.
+5. The installer seeds your **Show name/ID** and a private key and pre-fills the hosted relay, so a fresh install works with zero setup.
 6. Follow the built-in **walkthrough tour**: name your show, add the commands to expose, copy the embed snippet, and click **Start**.
 
 <details>
@@ -262,8 +262,10 @@ Everything about obtaining a license lives **off the plugin** — the plugin its
 ```jsonc
 {
   "relayUrl": "",                                 // blank = built-in hosted relay
-  "showId": "",                                   // auto-generated on first run
+  "showId": "",                                   // seeded at install
+  "showKey": "",                                  // private per-show key, sent as the relay auth header
   "licenseKey": "",                               // blank = Free tier
+  "upgradeUrl": "",                               // optional "Details" link shown next to the license field
   "fppApi": "http://127.0.0.1/api/command",
   "poll": { "mode": "longpoll", "holdSec": 25 },
   "commands": [
@@ -285,6 +287,8 @@ Everything about obtaining a license lives **off the plugin** — the plugin its
     "radiusM": 300, "toleranceM": 50,
     "onDenied": "strict"
   },
+  "widget": { "buttonColor": "", "textColor": "", "headline": "" },  // licensed themed widget
+  "ui": { "onboardingSeen": false, "onboardingTourEnabled": true },  // settings-page UI state
   "turnstileRequired": false
 }
 ```
@@ -302,6 +306,3 @@ Part of the `fpp-*` plugin family alongside EncoreRadio, SLED, and more.
 
 Free for personal, hobbyist, and noncommercial use under the
 [PolyForm Noncommercial License 1.0.0](LICENSE).
-
-Using this in a commercial or paid-event display? A separate commercial license is
-required — contact **license.request@christmasinboontontwp.com** to arrange one.

@@ -2,12 +2,22 @@
 # Shared helpers for fpp-CrowdPlay. Source this; don't execute it.
 # shellcheck shell=bash
 
-CP_PLUGIN_ID="CrowdPlay"
 CP_MEDIA_DIR="${MEDIADIR:-/home/fpp/media}"
 CP_CFG_DIR="${CP_MEDIA_DIR}/plugindata/fpp-CrowdPlay"
 CP_CFG_FILE="${CP_CFG_DIR}/crowdplay.json"
 CP_STATE_DIR="${CP_MEDIA_DIR}/plugins/fpp-CrowdPlay/state"
 CP_LOG_FILE="${CP_MEDIA_DIR}/logs/plugin-fpp-CrowdPlay.log"
+
+# Write the private show key into a mode-600 temp file and print its path, so
+# curl can read the auth header with `-H @file` instead of taking it on the
+# command line (where it would be visible in `ps`). Caller removes the file.
+cp_keyfile() {
+    local k="$1" f
+    f="$(mktemp "${TMPDIR:-/tmp}/cp.XXXXXX")" || return 1
+    chmod 600 "$f" 2>/dev/null
+    printf 'X-CrowdPlay-Key: %s\n' "$k" > "$f"
+    printf '%s' "$f"
+}
 
 cp_ts()  { date '+%Y-%m-%d %H:%M:%S'; }
 cp_log() { echo "[$(cp_ts)] [fpp-CrowdPlay] $*" >> "$CP_LOG_FILE"; }
@@ -72,9 +82,11 @@ cp_relay_register() {
         return 1
     fi
     [[ -n "$jqerr" ]] && rm -f "$jqerr"
+    local hdr; hdr="$(cp_keyfile "$skey")"
     resp="$(curl -sS --max-time 15 -X POST "${relay}/api/register" \
-        -H 'Content-Type: application/json' -H "X-CrowdPlay-Key: ${skey}" \
+        -H 'Content-Type: application/json' -H @"$hdr" \
         -d "$payload" 2>/dev/null)"
+    rm -f "$hdr"
     cp_log "register: -> ${resp:-<no response>}"
     # Report whether the relay actually accepted the config, so callers (e.g.
     # save.php) can tell the user the settings synced vs. need a retry. The
@@ -99,7 +111,9 @@ cp_relay_complete() {
     local id="$1" relay show skey
     relay="$(cp_relay)"; show="$(cp_show)"; skey="$(cp_showkey)"
     [[ -n "$relay" && -n "$show" ]] || return 0
+    local hdr; hdr="$(cp_keyfile "$skey")"
     curl -sS --max-time 10 -X POST "${relay}/api/complete" \
-        -H 'Content-Type: application/json' -H "X-CrowdPlay-Key: ${skey}" \
+        -H 'Content-Type: application/json' -H @"$hdr" \
         -d "$(jq -cn --arg s "$show" --arg i "$id" '{show:$s,id:$i}')" >/dev/null 2>&1 || true
+    rm -f "$hdr"
 }

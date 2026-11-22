@@ -1,8 +1,8 @@
 {
   "repoName": "fpp-CrowdPlay",
   "name": "CrowdPlay",
-  "author": "Nick Scilingo Nick S(NJ)",
-  "description": "Put the show in their hands. Let your website visitors trigger your FPP Commands - overlay an effect on a prop, run a snow machine, fire a finale - from a button you embed in your own site or your Remote Falcon page, without ever exposing your show player to the internet. The plugin never opens an inbound port: it polls a hosted relay outbound and runs only the commands you explicitly allow, each with its own execution mode (concurrent overlay or interrupt), rate limit, and cooldown. Visitor requests are gated at the relay with bot protection and rate limiting, and an optional on-site location gate can require a visitor to be within a set distance of the show. The hosted relay is free to use (up to 3 controls and 30 presses/hour per show); an optional license key, validated at the relay, raises those limits and enables a themed widget, badge removal, and per-show analytics.",
+  "author": "Nick Scilingo",
+  "description": "Put the show in their hands. Let your website visitors trigger your FPP Commands - overlay an effect on a prop, run a snow machine, fire a finale - from a button you embed in your own site or your Remote Falcon page, without ever exposing your show player to the internet. The plugin never opens an inbound port: it polls a hosted relay (crowdplay-relay.nscilingo.workers.dev) outbound and runs only the commands you explicitly allow, each with its own execution mode (concurrent overlay or interrupt), rate limit, and cooldown. Visitor requests are gated at the relay with bot protection and rate limiting, and an optional on-site location gate can require a visitor to be within a set distance of the show. The hosted relay is free to use (up to 3 controls and 30 presses/hour per show); an optional license key, validated at the relay, raises those limits and enables a themed widget, badge removal, and per-show analytics.",
   "homeURL": "https://github.com/focusedonsound/fpp-CrowdPlay",
   "srcURL": "https://github.com/focusedonsound/fpp-CrowdPlay.git",
   "bugURL": "https://github.com/focusedonsound/fpp-CrowdPlay/issues",
@@ -16,14 +16,14 @@
     "sends": [
       {
         "to": "crowdplay-relay.nscilingo.workers.dev (the hosted CrowdPlay relay)",
-        "what": "Show ID and license key (when validating), outbound poll requests, and command-completion reports.",
-        "why": "to receive queued visitor commands and validate a license",
+        "what": "Show ID and a private show key; license key (when validating); your command allowlist metadata (labels, lanes, cooldowns, durations, public-safe flags) and, if the location gate is enabled, show coordinates/radius; outbound poll requests; command-completion reports; and press-count analytics requests while the settings page is open.",
+        "why": "to queue and gate visitor commands, render the widget, validate a license, and show per-control press counts",
         "alwaysOn": true
       }
     ],
     "collects": [
       {
-        "what": "Relay URL, show ID, and license key.",
+        "what": "Relay URL, show ID, a private show key, and license key.",
         "about": "operator",
         "keptDays": null,
         "canDelete": true,
@@ -38,12 +38,12 @@
       }
     ],
     "sensors": [],
-    "remoteAccess": "internet-authenticated",
+    "remoteAccess": "none",
     "systemChanges": [
       { "kind": "service", "what": "Outbound poll loop (started/stopped by CrowdPlay - Start/Stop) that long-polls the relay and runs your allowlisted commands via FPP's command API." }
     ],
     "closedCode": false,
-    "other": "The plugin is open source. The relay it talks to (queue, rate limiting, bot protection, license validation) is a separate hosted service and is not part of this plugin. The plugin enforces its own command allowlist locally: the relay can only ask it to run commands you have explicitly configured, never arbitrary ones. Location gating is evaluated at the relay from the visitor's browser-reported coordinates; those coordinates are used only for the distance check and are not stored by the plugin. No visitor personal data is sent by the plugin. Uninstalling leaves plugindata/fpp-CrowdPlay/ in place so reinstalling keeps your settings."
+    "other": "The plugin opens no inbound port and runs no listener of its own (remoteAccess: none); all control is mediated by the hosted relay at crowdplay-relay.nscilingo.workers.dev, which the plugin reaches only by outbound polling. That relay (queue, rate limiting, bot protection, license validation) is a separate hosted service and is not part of this plugin. The plugin enforces its command allowlist locally: the relay can only ask it to run commands you have explicitly configured, never arbitrary ones. If you enable the location gate, your show's coordinates (latitude/longitude, radius, tolerance) are sent to the relay at registration, because the distance check runs at the relay against the visitor's browser-reported coordinates - the show player is never reachable from a visitor's browser. Those visitor coordinates are used only for the distance check and are not stored by the plugin. No visitor personal data is sent by the plugin. Uninstalling leaves plugindata/fpp-CrowdPlay/ in place so reinstalling keeps your settings."
   },
   "versions": [
     {

@@ -8,6 +8,16 @@
 // a brand-new install doesn't look broken while the restart banner is pending.
 header('Content-Type: application/json');
 
+// FPP has no login by default, so a state-changing action must never run on a
+// GET - a plain <img>/<iframe> on any page the operator has open would trigger
+// it. Starting the poll daemon is state-changing, so this is POST-only (the
+// settings-page button already POSTs). See save.php for the full rationale.
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['ok' => false, 'message' => 'POST required']);
+    exit;
+}
+
 $script = dirname(__DIR__) . '/commands/cp_cmd_start.sh';   // .../plugins/fpp-CrowdPlay/commands/...
 if (!is_file($script)) {
     http_response_code(500);

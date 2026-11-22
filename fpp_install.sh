@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-PLUGIN_NAME="CrowdPlay"
 PLUGIN_ID="CrowdPlay"
 
 FPPDIR="${FPPDIR:-}"

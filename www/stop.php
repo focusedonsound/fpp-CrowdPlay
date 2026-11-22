@@ -4,6 +4,14 @@
 // (See start.php for the full rationale.)
 header('Content-Type: application/json');
 
+// State-changing (stops the poll daemon), so POST-only - same reasoning as
+// save.php/start.php. The settings-page button already POSTs.
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['ok' => false, 'message' => 'POST required']);
+    exit;
+}
+
 $script = dirname(__DIR__) . '/commands/cp_cmd_stop.sh';
 if (!is_file($script)) {
     http_response_code(500);

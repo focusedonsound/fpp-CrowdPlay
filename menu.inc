@@ -2,13 +2,14 @@
 
 # $menuEntries is an array of menu entries for this plugin - see
 # fpp-plugin-Template/menu.inc and PLUGIN_GUIDELINES.md #9.1 (at most ONE
-# entry per type: status/content/output/help). CrowdPlay is a single
-# config+control page, so it only ever appears under 'status'.
+# entry per type: status/content/output/help). CrowdPlay is primarily a
+# configuration page (allowlist, keys, location, widget), so it lives under
+# 'content' (Content Setup); the Start/Stop buttons are on that same page.
 
 $menuEntries = Array(
 	Array(
 		'text' => 'CrowdPlay',
-		'type' => 'status',
+		'type' => 'content',
 		'page' => 'www/index.php',
 		'wrap' => 1
 	)
