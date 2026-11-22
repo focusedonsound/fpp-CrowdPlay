@@ -21,3 +21,7 @@ if [[ -f "$PID_FILE" ]]; then
 else
     cp_log "Stop: no poll daemon running"
 fi
+
+# Remove the persistent key-header file (in case the daemon was SIGKILLed and
+# its own graceful cleanup never ran).
+cp_keyfile_cleanup

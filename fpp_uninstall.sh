@@ -16,6 +16,10 @@ if [[ -f "$PID_FILE" ]]; then
   log "Stopped poll daemon."
 fi
 
+# Remove the persistent key-header file so the show key isn't left on disk
+# outside plugindata (which we intentionally keep).
+rm -f "${STATE_DIR}/showkey.hdr"
+
 # The CrowdPlay - Start/Stop commands are defined in commands/descriptions.json,
 # which fppd only reads at its own startup. This script is the only code that runs
 # before the plugin directory is deleted, so ask fppd to restart (FPP's own

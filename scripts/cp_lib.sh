@@ -8,16 +8,27 @@ CP_CFG_FILE="${CP_CFG_DIR}/crowdplay.json"
 CP_STATE_DIR="${CP_MEDIA_DIR}/plugins/fpp-CrowdPlay/state"
 CP_LOG_FILE="${CP_MEDIA_DIR}/logs/plugin-fpp-CrowdPlay.log"
 
-# Write the private show key into a mode-600 temp file and print its path, so
-# curl can read the auth header with `-H @file` instead of taking it on the
-# command line (where it would be visible in `ps`). Caller removes the file.
+# Path to the persistent, mode-600 auth-header file holding the private show
+# key. curl reads the header with `-H @file` instead of taking the key on the
+# command line (where `ps` would expose it). This is a SINGLE plugin-owned file
+# under the state dir - NOT a per-call /tmp file - so an interrupted curl (e.g.
+# the daemon killed mid-poll) can never orphan a secret-bearing file in /tmp.
+# It holds no more than crowdplay.json already does (same mode-600, same dir
+# tree) and is removed at Stop (cp_cmd_stop.sh) and uninstall (fpp_uninstall.sh).
+CP_KEY_HDR="${CP_STATE_DIR}/showkey.hdr"
+
+# Write/refresh the key header file and print its path. Idempotent: callers can
+# reuse the returned path for the life of the process without re-creating it.
 cp_keyfile() {
-    local k="$1" f
-    f="$(mktemp "${TMPDIR:-/tmp}/cp.XXXXXX")" || return 1
-    chmod 600 "$f" 2>/dev/null
-    printf 'X-CrowdPlay-Key: %s\n' "$k" > "$f"
-    printf '%s' "$f"
+    local k="$1"
+    mkdir -p "$CP_STATE_DIR" 2>/dev/null || return 1
+    ( umask 077; printf 'X-CrowdPlay-Key: %s\n' "$k" > "$CP_KEY_HDR" ) || return 1
+    chmod 600 "$CP_KEY_HDR" 2>/dev/null
+    printf '%s' "$CP_KEY_HDR"
 }
+
+# Remove the persistent key-header file (called at Stop / uninstall).
+cp_keyfile_cleanup() { rm -f "$CP_KEY_HDR" 2>/dev/null || true; }
 
 cp_ts()  { date '+%Y-%m-%d %H:%M:%S'; }
 cp_log() { echo "[$(cp_ts)] [fpp-CrowdPlay] $*" >> "$CP_LOG_FILE"; }
@@ -86,7 +97,6 @@ cp_relay_register() {
     resp="$(curl -sS --max-time 15 -X POST "${relay}/api/register" \
         -H 'Content-Type: application/json' -H @"$hdr" \
         -d "$payload" 2>/dev/null)"
-    rm -f "$hdr"
     cp_log "register: -> ${resp:-<no response>}"
     # Report whether the relay actually accepted the config, so callers (e.g.
     # save.php) can tell the user the settings synced vs. need a retry. The
@@ -115,5 +125,4 @@ cp_relay_complete() {
     curl -sS --max-time 10 -X POST "${relay}/api/complete" \
         -H 'Content-Type: application/json' -H @"$hdr" \
         -d "$(jq -cn --arg s "$show" --arg i "$id" '{show:$s,id:$i}')" >/dev/null 2>&1 || true
-    rm -f "$hdr"
 }

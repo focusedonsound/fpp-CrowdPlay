@@ -16,8 +16,8 @@
     "sends": [
       {
         "to": "crowdplay-relay.nscilingo.workers.dev (the hosted CrowdPlay relay)",
-        "what": "Show ID and a private show key; license key (when validating); your command allowlist metadata (labels, lanes, cooldowns, durations, public-safe flags) and, if the location gate is enabled, show coordinates/radius; outbound poll requests; command-completion reports; and press-count analytics requests while the settings page is open.",
-        "why": "to queue and gate visitor commands, render the widget, validate a license, and show per-control press counts",
+        "what": "Show ID, private key, license key, command-allowlist metadata, show coordinates, and poll requests.",
+        "why": "to queue and gate visitor commands, validate a license, and show per-control press counts",
         "alwaysOn": true
       }
     ],
@@ -43,7 +43,7 @@
       { "kind": "service", "what": "Outbound poll loop (started/stopped by CrowdPlay - Start/Stop) that long-polls the relay and runs your allowlisted commands via FPP's command API." }
     ],
     "closedCode": false,
-    "other": "The plugin opens no inbound port and runs no listener of its own (remoteAccess: none); all control is mediated by the hosted relay at crowdplay-relay.nscilingo.workers.dev, which the plugin reaches only by outbound polling. That relay (queue, rate limiting, bot protection, license validation) is a separate hosted service and is not part of this plugin. The plugin enforces its command allowlist locally: the relay can only ask it to run commands you have explicitly configured, never arbitrary ones. If you enable the location gate, your show's coordinates (latitude/longitude, radius, tolerance) are sent to the relay at registration, because the distance check runs at the relay against the visitor's browser-reported coordinates - the show player is never reachable from a visitor's browser. Those visitor coordinates are used only for the distance check and are not stored by the plugin. No visitor personal data is sent by the plugin. Uninstalling leaves plugindata/fpp-CrowdPlay/ in place so reinstalling keeps your settings."
+    "other": "In detail, the plugin sends to the relay: the Show ID and a private show key (as an auth header) on register/poll/complete; the license key when validating; command-allowlist metadata (labels, lanes, cooldowns, durations, public-safe flags) at registration; your show coordinates/radius/tolerance only if you enable the location gate; outbound long-poll requests; command-completion reports; and per-control press-count (analytics) requests while the settings page is open. The plugin opens no inbound port and runs no listener of its own (remoteAccess: none); all control is mediated by the hosted relay at crowdplay-relay.nscilingo.workers.dev, which the plugin reaches only by outbound polling. That relay (queue, rate limiting, bot protection, license validation) is a separate hosted service and is not part of this plugin. The plugin enforces its command allowlist locally: the relay can only ask it to run commands you have explicitly configured, never arbitrary ones. If you enable the location gate, your show's coordinates (latitude/longitude, radius, tolerance) are sent to the relay at registration, because the distance check runs at the relay against the visitor's browser-reported coordinates - the show player is never reachable from a visitor's browser. Those visitor coordinates are used only for the distance check and are not stored by the plugin. No visitor personal data is sent by the plugin. Uninstalling leaves plugindata/fpp-CrowdPlay/ in place so reinstalling keeps your settings."
   },
   "versions": [
     {

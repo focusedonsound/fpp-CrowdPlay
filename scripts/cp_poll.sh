@@ -32,17 +32,19 @@ cp_log "poll: starting (relay=$RELAY_URL show=$SHOW_ID hold=${HOLD_SEC}s)"
 cp_relay_register || cp_log "poll: initial register failed (will still poll)"
 BACKOFF=1
 
+# Write the private-key auth header once (persistent, mode-600, plugin-owned).
+# Reused for every poll; removed when the daemon exits (and at Stop/uninstall).
+CP_HDR="$(cp_keyfile "$SHOW_KEY")"
+
 while [[ $RUNNING -eq 1 ]]; do
     # Long-poll for due command ids. Authenticates with the private Show Key
     # (X-CrowdPlay-Key); the relay returns a JSON array like ["wave","snow"],
     # or [] on timeout. A 403 {"error":"show-taken"} means another player
     # claimed this Show ID - handled below.
-    CP_HDR="$(cp_keyfile "$SHOW_KEY")"
     RESP="$(curl -sS --max-time "$((HOLD_SEC + 10))" \
                  -H "X-CrowdPlay-Show: ${SHOW_ID}" \
                  -H @"$CP_HDR" \
                  "${RELAY_URL%/}/api/poll?show=${SHOW_ID}&hold=${HOLD_SEC}" 2>/dev/null)" || RESP=""
-    rm -f "$CP_HDR"
 
     case "$RESP" in
         *show-taken*)
@@ -65,4 +67,7 @@ while [[ $RUNNING -eq 1 ]]; do
     done < <(jq -r '.[]? // empty' <<<"$RESP" 2>/dev/null)
 done
 
+# Graceful shutdown (SIGTERM/SIGINT): drop the key-header file. A SIGKILL would
+# skip this, so cp_cmd_stop.sh / fpp_uninstall.sh remove it too (belt & braces).
+cp_keyfile_cleanup
 cp_log "poll: stopped"
