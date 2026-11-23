@@ -92,7 +92,8 @@ cp_relay_register() {
               lane: .lane,
               cooldownSec: .cooldownSec,
               durationSec: .durationSec,
-              publicSafe: .publicSafe
+              publicSafe: .publicSafe,
+              image: .image
           } ]}' \
         "$CP_CFG_FILE" 2>"${jqerr:-/dev/null}")"
     if [[ -z "$payload" ]]; then

@@ -136,6 +136,12 @@ if (isset($_POST['commandsJson'])) {
 
     $mode = (($c['mode'] ?? 'overlay') === 'interrupt') ? 'interrupt' : 'overlay';
 
+    // Per-control button image (premium). Keep only a relay-hosted /img/ path
+    // (what upload.php returns); drop anything else. The relay re-validates and
+    // ignores it on free shows, so this is cosmetic belt-and-suspenders.
+    $image = trim((string)($c['image'] ?? ''));
+    if (!preg_match('#^/img/[A-Za-z0-9._/%-]{1,200}$#', $image)) $image = '';
+
     $clean[] = [
       "id"          => $id,
       "label"       => cpClean(trim($c['label'] ?? $id)),
@@ -147,6 +153,7 @@ if (isset($_POST['commandsJson'])) {
       "cooldownSec" => max(0, (int)($c['cooldownSec'] ?? 0)),
       "durationSec" => max(0, (int)($c['durationSec'] ?? 0)),
       "publicSafe"  => !empty($c['publicSafe']),
+      "image"       => $image,
     ];
   }
   $cfg['commands'] = $clean;

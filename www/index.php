@@ -264,24 +264,24 @@ if ($cpVersion === '') {
     <!-- Commands -->
     <section class="cp-card" id="cpCardCmd">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 9h6M7 13h10"/></svg>Exposed commands</h2>
-      <p class="cp-sub">Only commands you add here can be triggered. For each one, pick a <b>Command Preset</b> you built in FPP (Content&nbsp;Setup&nbsp;&rarr;&nbsp;Command&nbsp;Presets &mdash; easiest, no JSON) or a raw FPP command with its arguments. What you pick stays on this player &mdash; the relay only learns the label, lane, cooldown and duration.</p>
+      <p class="cp-sub">Only commands you add here can be triggered. For each one, pick a <b>Command Preset</b> you built in FPP (Content&nbsp;Setup&nbsp;&rarr;&nbsp;Command&nbsp;Presets &mdash; easiest, no JSON) or a raw FPP command with its arguments. What you pick stays on this player &mdash; the relay only learns the label, lane, cooldown, duration and (optional) button image.</p>
       <div class="cp-tablewrap">
         <table class="cp-tbl">
           <thead><tr>
             <th>Label</th><th>ID</th><th>Preset / command</th><th>Args (JSON)</th>
-            <th>Mode</th><th>Lane</th><th>Cooldown&nbsp;(s)</th><th>Duration&nbsp;(s)</th><th>Public</th><th></th>
+            <th>Mode</th><th>Lane</th><th>Cooldown&nbsp;(s)</th><th>Duration&nbsp;(s)</th><th>Public</th><th>Image</th><th></th>
           </tr></thead>
           <tbody id="cpCmdBody"></tbody>
         </table>
       </div>
       <button type="button" class="cp-add" onclick="cpAddRow()">+ Add command</button>
-      <p class="cp-sub" style="margin:10px 0 0">Without a license key, a show can expose up to <b>3</b> controls and take <b>30</b> presses per hour (shared across all controls). A license key raises both limits.</p>
+      <p class="cp-sub" style="margin:10px 0 0">Without a license key, a show can expose up to <b>3</b> controls and take <b>30</b> presses per hour (shared across all controls). A license key raises both limits. <b>Custom button images</b> are a licensed feature &mdash; add a PNG/JPG/WEBP/GIF (max 512&nbsp;KB) per control; free shows show plain text buttons.</p>
     </section>
 
     <!-- Widget appearance (premium) -->
     <section class="cp-card" id="cpCardStyle">
       <h2><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-1.2-1-1.8-1-2.8 0-.7.6-1.2 1.4-1.2H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/></svg>Widget appearance</h2>
-      <p class="cp-sub">Match the buttons to your site. Applied on licensed shows; without a license key the widget uses the default look and a small &ldquo;Powered by CrowdPlay&rdquo; badge. Re-run Start after changing.</p>
+      <p class="cp-sub">Match the buttons to your site. Applied on licensed shows; without a license key the widget uses the default look. Every widget carries a small &ldquo;Powered by CrowdPlay&rdquo; badge. Re-run Start after changing.</p>
       <div class="cp-grid2">
         <div><label class="cp-lab">Button color</label>
           <input type="color" id="wgButtonColor" name="wgButtonColor" value="<?= $h(($widget['buttonColor'] ?? '') ?: '#6d5bff') ?>"></div>
@@ -392,6 +392,15 @@ function cpRow(c = {}) {
   const t7 = cell('<input type="number" class="f-cool" min="0" value="0">'); t7.className='cp-num'; tr.appendChild(t7);
   const t8 = cell('<input type="number" class="f-dur" min="0" value="0">'); t8.className='cp-num'; tr.appendChild(t8);
   const t9 = cell('<input type="checkbox" class="f-pub" checked>'); t9.className='cp-chk'; tr.appendChild(t9);
+  const t10 = cell(
+    '<div class="cp-imgwrap">'
+    + '<img class="f-imgprev" alt="" style="display:none;width:34px;height:34px;object-fit:cover;border-radius:6px;vertical-align:middle">'
+    + '<input type="hidden" class="f-img">'
+    + '<input type="file" class="f-imgfile" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">'
+    + '<button type="button" class="cp-btn ghost f-imgbtn" style="padding:4px 8px;font-size:12px">Add</button>'
+    + '<button type="button" class="cp-btn ghost f-imgclr" title="Remove image" style="display:none;padding:4px 8px;font-size:12px">&times;</button>'
+    + '</div>');
+  t10.className = 'cp-imgcell'; tr.appendChild(t10);
   tr.appendChild(cell('<button type="button" class="cp-rm" title="Remove" onclick="this.closest(\'tr\').remove()">&times;</button>'));
   tr.querySelector('.f-label').value = c.label || '';
   tr.querySelector('.f-id').value = c.id || '';
@@ -403,9 +412,44 @@ function cpRow(c = {}) {
   tr.querySelector('.f-cool').value = c.cooldownSec || 0;
   tr.querySelector('.f-dur').value = c.durationSec || 0;
   tr.querySelector('.f-pub').checked = (c.publicSafe !== false);
+  tr.querySelector('.f-img').value = c.image || '';
+  cpImgRender(tr);
+  cpImgWire(tr);
   return tr;
 }
 function cpAddRow(c){ document.getElementById('cpCmdBody').appendChild(cpRow(c)); }
+
+// Per-control image (premium). The stored value is the relay-relative path
+// (/img/...) that register sends on; preview against the relay origin.
+function cpImgRender(tr){
+  const path = tr.querySelector('.f-img').value || '';
+  const prev = tr.querySelector('.f-imgprev');
+  const add  = tr.querySelector('.f-imgbtn');
+  const clr  = tr.querySelector('.f-imgclr');
+  if(path){
+    prev.src = cpEmbedBase() + path;
+    prev.style.display='inline-block'; clr.style.display='inline-block'; add.textContent='Change';
+  } else {
+    prev.removeAttribute('src'); prev.style.display='none'; clr.style.display='none'; add.textContent='Add';
+  }
+}
+function cpImgWire(tr){
+  const file = tr.querySelector('.f-imgfile');
+  tr.querySelector('.f-imgbtn').onclick = ()=> file.click();
+  tr.querySelector('.f-imgclr').onclick = ()=>{ tr.querySelector('.f-img').value=''; file.value=''; cpImgRender(tr); };
+  file.onchange = async ()=>{
+    const f = file.files && file.files[0]; if(!f) return;
+    if(f.size > 512*1024){ msg('Image too large (max 512 KB).', true); file.value=''; return; }
+    const add = tr.querySelector('.f-imgbtn'); const was = add.textContent; add.textContent='Uploading…'; add.disabled=true;
+    try{
+      const res = await fetch('upload.php', { method:'POST', headers:{'Content-Type': f.type}, body: f });
+      const d = await res.json().catch(()=>({}));
+      if(res.ok && d && d.ok && d.url){ tr.querySelector('.f-img').value = d.url; cpImgRender(tr); msg('Image added — press Save, then Start.', false); }
+      else { msg((d && d.message) || 'Upload failed.', true); }
+    } catch(e){ msg('Upload failed: '+e, true); }
+    finally { add.disabled=false; if(tr.querySelector('.f-img').value==='') add.textContent=was; file.value=''; }
+  };
+}
 
 function cpCollect(){
   const rows=[];
@@ -418,7 +462,7 @@ function cpCollect(){
     const row={ id:v('.f-id').value.trim(), label,
       mode:v('.f-mode').value, lane:v('.f-lane').value.trim()||'default',
       cooldownSec:parseInt(v('.f-cool').value||'0',10), durationSec:parseInt(v('.f-dur').value||'0',10),
-      publicSafe:v('.f-pub').checked };
+      publicSafe:v('.f-pub').checked, image:v('.f-img').value.trim() };
     if(type==='preset'){ row.preset=name; row.fppCommand=''; row.args=''; }
     else { row.preset=''; row.fppCommand=name; row.args=v('.f-args').value.trim(); }
     rows.push(row);
