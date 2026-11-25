@@ -442,7 +442,7 @@ function cpImgWire(tr){
     if(f.size > 512*1024){ msg('Image too large (max 512 KB).', true); file.value=''; return; }
     const add = tr.querySelector('.f-imgbtn'); const was = add.textContent; add.textContent='Uploading…'; add.disabled=true;
     try{
-      const res = await fetch('upload.php', { method:'POST', headers:{'Content-Type': f.type}, body: f });
+      const res = await fetch(cpUrl('upload.php'), { method:'POST', headers:{'Content-Type': f.type}, body: f });
       const d = await res.json().catch(()=>({}));
       if(res.ok && d && d.ok && d.url){ tr.querySelector('.f-img').value = d.url; cpImgRender(tr); msg('Image added — press Save, then Start.', false); }
       else { msg((d && d.message) || 'Upload failed.', true); }
