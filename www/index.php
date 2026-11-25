@@ -427,7 +427,10 @@ function cpImgRender(tr){
   const add  = tr.querySelector('.f-imgbtn');
   const clr  = tr.querySelector('.f-imgclr');
   if(path){
-    prev.src = cpEmbedBase() + path;
+    // Load the preview through the plugin's own origin (img.php proxy): FPP's
+    // UI sets a strict CSP (img-src 'self') that blocks loading the image
+    // straight from the relay origin.
+    prev.src = cpUrl('img.php') + '&src=' + encodeURIComponent(path);
     prev.style.display='inline-block'; clr.style.display='inline-block'; add.textContent='Change';
   } else {
     prev.removeAttribute('src'); prev.style.display='none'; clr.style.display='none'; add.textContent='Add';
